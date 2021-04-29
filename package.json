@@ -1,0 +1,16 @@
+{
+  "name": "wvtble",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "node make",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "dependencies": {
+    "fft": "^0.2.1",
+    "mocha": "^8.3.2"
+  },
+  "devDependencies": {},
+  "description": ""
+}
