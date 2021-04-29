@@ -1,16 +1,30 @@
 {
-  "name": "wvtble",
+  "name": "nco",
   "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "build": "node make",
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "description": "",
+  "main": "make.js",
+  "directories": {
+    "lib": "lib"
   },
-  "keywords": [],
   "dependencies": {
-    "fft": "^0.2.1",
+    "fft": "^0.2.1"
+  },
+  "devDependencies": {
     "mocha": "^8.3.2"
   },
-  "devDependencies": {},
-  "description": ""
+  "scripts": {
+    "build": "node make",
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yishengjiang99/nco.git"
+  },
+  "keywords": [],
+  "author": " <Your Name> (example.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yishengjiang99/nco/issues"
+  },
+  "homepage": "https://github.com/yishengjiang99/nco#readme"
 }
