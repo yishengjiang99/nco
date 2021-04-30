@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+  <body></body>
+  <script>
+    const ctx = new AudioContext();
+    ctx.audioWorklet.addModule("public/rend-proc.js").then(() => {
+      const awn = new AudioWorkletNode(ctx, "rendproc");
+    });
+  </script>
+</html>
