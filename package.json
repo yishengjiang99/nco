@@ -12,9 +12,6 @@
     "mkdiv": "^1.0.1",
     "sf2-sql": "^1.1.0"
   },
-  "devDependencies": {
-    "mocha": "^8.3.2"
-  },
   "scripts": {
     "build": "node make",
     "test": "mocha"

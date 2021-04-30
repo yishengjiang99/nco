@@ -6,6 +6,11 @@ class RendProc extends AudioWorkletProcessor {
     this.moduleInt = false;
     this.osc_ref = Module.init_oscillators();
     const osc_struct_size = Module.wavetable_struct_size();
+    this.tableList = wavetable_list(
+      Module.HEAPU8,
+      this.osc_ref,
+      osc_struct_size
+    );
     this.port.postMessage({
       ready: 1,
       osc_table: wavetable_list(Module.HEAPU8, this.osc_ref),
@@ -14,15 +19,15 @@ class RendProc extends AudioWorkletProcessor {
   }
 
   process(_, outputs) {
-    //return true here just means come back later. no data yet.
-    //returning false would end thread.
-    if (this.moduleInit == false) return true;
-    Module.audio_thread_cb(currentFrame);
-
     for (let i = 0; i < 16; i++) {
+      Module.wavetable_1dimensional_oscillator(this.osc_ref);
+      const flrr = new DataView(
+        Module.HEAPU8.buffer,
+        this.tableList[i].output_ptr,
+        128
+      );
       for (let j = 0; j < 128; j++) {
-        outputs[0][0][j] += this.ob_buffer[i * 128 + j];
-        outputs[0][1][j] += this.ob_buffer[i * 128 + j];
+        outputs[0][0][j] += flrr.getFloat32(i * 4, true); //[i];
       }
     }
     return true;
@@ -59,6 +64,7 @@ function onMSG({ data: { setMidi, setFade, setFadeDelta, keyOn, keyOff } }) {
 function wavetable_list(heap, osc_ref, osc_struct_size) {
   return Array.from(Array(16).keys()).map((index) =>
     wavetable_info(
+      osc_ref + index * osc_struct_size,
       new DataView(
         heap.buffer,
         osc_ref + index * osc_struct_size,
@@ -67,7 +73,7 @@ function wavetable_list(heap, osc_ref, osc_struct_size) {
     )
   );
 }
-function wavetable_info(dv) {
+function wavetable_info(ref, dv) {
   let offset = 0;
   const [
     output_ptr,
@@ -94,31 +100,16 @@ function wavetable_info(dv) {
     ref_wave110,
     ref_wave111,
   ] = [
-    dv.getInt32(offset, true),
-    dv.getUint32((offset += 4), true),
-    dv.getInt32((offset += 4), true),
-    dv.getInt32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getFloat32((offset += 4), true),
-    dv.getFloat32((offset += 4), true),
-    dv.getFloat32((offset += 4), true),
-    dv.getFloat32((offset += 4), true),
-    dv.getFloat32((offset += 4), true),
-    dv.getFloat32((offset += 4), true),
-    dv.getFloat32((offset += 4), true),
-
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
-    dv.getUint32((offset += 4), true),
+    dv.getUint32(0, true),
+    dv.getUint32(8, true),
+    dv.getInt32(12, true),
+    dv.getInt32(16, true),
+    ...new Uint32Array(dv.buffer, 20, 5),
+    ...new Float32Array(dv.buffer, 40, 7),
+    ...new Uint32Array(dv.buffer, 68, 8),
   ];
   return {
+    ref,
     output_ptr,
     samples_per_block,
     phase,

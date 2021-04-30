@@ -9,7 +9,7 @@
 void set_midi(int channel, uint8_t midiPitch)
 {
 	float frequency = 440.0f * powf(2.0f, (float)(midiPitch - 69) / 12.0f);
-	int32_t phaseIncrement = (int32_t)(BIT32_NORMALIZATION * frequency / SAMPLE_RATE + 0.5f);
+	oscillator[channel].phaseIncrement = (int32_t)(BIT32_NORMALIZATION * frequency / SAMPLE_RATE + 0.5f);
 }
 void handle_midi_channel_msg(uint8_t bytes[3])
 {

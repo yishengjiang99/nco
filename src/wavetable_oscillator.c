@@ -91,7 +91,6 @@ void wavetable_1dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 
 	float *wave000 = this_oscillator->wave000;
 	float *wave001 = this_oscillator->wave001;
-	phaseIncrement = 4;
 	while (num_samples_remaining-- > 0)
 	{
 
@@ -251,12 +250,10 @@ void wavetable_3dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 }
 
 #define NUM_OSCILLATORS 16
-#define SAMPLE_BLOCKSIZE 8
+#define SAMPLE_BLOCKSIZE 128
 
 #define MASK_FRACTIONAL_BITS 0x000FFFFF
 #define MASK_WAVEINDEX 0x00000FFFUL
-#define NUM_OSCILLATORS 16
-#define SAMPLE_BLOCKSIZE 8
 #define WAVETABLE_SIZE 4096
 #define LOG2_WAVETABLE_SIZE 12
 
@@ -269,6 +266,22 @@ static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
 
 wavetable_oscillator_data *init_oscillators()
 {
+
+	//
+	//	This sets up two wavetables for interpolation in one dimension.
+	//
+	//float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
+
+	for (int n = 0; n < WAVETABLE_SIZE; n++)
+	{
+		sinewave[n] = sinf(2.0 * PI * ((float)n) / (float)WAVETABLE_SIZE);
+	}
+
+	for (int n = 0; n < WAVETABLE_SIZE / 2; n++)
+	{
+		squarewave[n] = 0.5;
+		squarewave[n + WAVETABLE_SIZE / 2] = -0.5;
+	}
 
 	//
 	//	This sets up NUM_OSCILLATORS (16) simulataneous waveform oscillators
