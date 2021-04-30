@@ -42,18 +42,18 @@ void handle_midi_channel_msg(uint8_t bytes[3])
 	}
 }
 #define AUD_CTX_BUFFER 128
-#define AUDIO_THREAD_OUTPUT_BYTES AUD_CTX_BUFFER * sizeof(float)
-static float ctx_outputBuffer[AUDIO_THREAD_OUTPUT_BYTES];
-void audio_thread_cb(uint32_t currentFrame)
+#define BYTES_PER_OSC AUD_CTX_BUFFER * sizeof(float)
+static float ctx_outputBuffer[BYTES_PER_OSC * NUM_OSCILLATORS];
+float *audio_thread_cb(uint32_t currentFrame)
 {
-	float *outputBuffer = &ctx_outputBuffer[0];
 	for (int i = 0; i < NUM_OSCILLATORS; i++)
 	{
-		bzero(outputBuffer + i * AUDIO_THREAD_OUTPUT_BYTES, AUDIO_THREAD_OUTPUT_BYTES);
+		bzero(&ctx_outputBuffer[i * BYTES_PER_OSC], AUD_CTX_BUFFER * sizeof(float));
 		for (int output_offset = 0; output_offset < AUD_CTX_BUFFER - SAMPLE_BLOCKSIZE; output_offset += SAMPLE_BLOCKSIZE)
 		{
-			oscillator[i].output_ptr = outputBuffer + i * AUDIO_THREAD_OUTPUT_BYTES + output_offset;
+			oscillator[i].output_ptr = &ctx_outputBuffer[i * BYTES_PER_OSC + output_offset];
 			wavetable_1dimensional_oscillator(&oscillator[i]);
 		}
 	}
+	return &ctx_outputBuffer;
 }

@@ -267,7 +267,7 @@ static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
 static float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
 static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
 
-wavetable_oscillator_data *init_oscillators(wavetable_oscillator_data *oscillator)
+wavetable_oscillator_data *init_oscillators()
 {
 
 	//
