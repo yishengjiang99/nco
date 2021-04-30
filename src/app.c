@@ -55,5 +55,5 @@ float *audio_thread_cb(uint32_t currentFrame)
 			wavetable_1dimensional_oscillator(&oscillator[i]);
 		}
 	}
-	return &ctx_outputBuffer;
+	return &ctx_outputBuffer[0];
 }
