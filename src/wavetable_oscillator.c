@@ -262,6 +262,7 @@ void wavetable_3dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 
 #define PI 3.1415926539f
 #define BIT32_NORMALIZATION 4294967296.0f
+
 static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
 static float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
 static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];

@@ -41,9 +41,12 @@ void handle_midi_channel_msg(uint8_t bytes[3])
 		break; //TODO: break;
 	}
 }
+#define AUD_CTX_BUFFER 128
 #define AUDIO_THREAD_OUTPUT_BYTES AUD_CTX_BUFFER * sizeof(float)
-void audio_thread_cb(uint32_t currentFrame, float *outputBuffer)
+static float ctx_outputBuffer[AUDIO_THREAD_OUTPUT_BYTES];
+void audio_thread_cb(uint32_t currentFrame)
 {
+	float *outputBuffer = &ctx_outputBuffer[0];
 	for (int i = 0; i < NUM_OSCILLATORS; i++)
 	{
 		bzero(outputBuffer + i * AUDIO_THREAD_OUTPUT_BYTES, AUDIO_THREAD_OUTPUT_BYTES);
