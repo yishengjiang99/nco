@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include <math.h>
-#include <unistd.h>
+#include <string.h>
 //
 //  This typedef in wavetable_oscillator.h
 //
@@ -95,9 +95,10 @@ void wavetable_1dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 
 	float *wave000 = this_oscillator->wave000;
 	float *wave001 = this_oscillator->wave001;
-
+	phaseIncrement = 4;
 	while (num_samples_remaining-- > 0)
 	{
+
 		unsigned int waveIndex0 = (unsigned int)(phase >> num_fractionalBits) & mask_waveIndex;
 		unsigned int waveIndex1 = (waveIndex0 + 1) & mask_waveIndex;
 		float linearGain1 = scaler_fractionalBits * (float)(phase & mask_fractionalBits);
@@ -256,36 +257,25 @@ void wavetable_3dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 #define NUM_OSCILLATORS 16
 #define SAMPLE_BLOCKSIZE 8
 
+#define MASK_FRACTIONAL_BITS 0x000FFFFF
+#define MASK_WAVEINDEX 0x00000FFFUL
+#define NUM_OSCILLATORS 16
+#define SAMPLE_BLOCKSIZE 8
 #define WAVETABLE_SIZE 4096
 #define LOG2_WAVETABLE_SIZE 12
-#define MASK_FRACTIONAL_BITS 0x000FFFFF
-#define MASK_WAVEINDEX 0x000FFFFF
 
-#define PI 3.1415926539
+#define PI 3.1415926539f
+#define BIT32_NORMALIZATION 4294967296.0f
 static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
 static float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
+static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
+
 void init_oscillators()
 {
-	wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
-	float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
-	//
-	//	This sets up two wavetables for interpolation in one dimension.
-	//
-	for (int n = 0; n < WAVETABLE_SIZE; n++)
-	{
-		sinewave[n] = sinf(2.0 * PI * ((float)n) / (float)WAVETABLE_SIZE);
-	}
-
-	for (int n = 0; n < WAVETABLE_SIZE / 2; n++)
-	{
-		squarewave[n] = 0.5;
-		squarewave[n + WAVETABLE_SIZE / 2] = -0.5;
-	}
 
 	//
 	//	This sets up NUM_OSCILLATORS (16) simulataneous waveform oscillators
 	//
-	uint16_t frequency = 110;
 	for (int i = 0; i < NUM_OSCILLATORS; i++)
 	{
 		oscillator[i].output_ptr = &(output_samples[i][0]);
@@ -296,77 +286,14 @@ void init_oscillators()
 		oscillator[i].frequencyIncrement = 0;
 
 		oscillator[i].num_fractionalBits = 32 - LOG2_WAVETABLE_SIZE;
-		oscillator[i].mask_fractionalBits = (0x00000001 << (oscillator[i].num_fractionalBits)) - 1;
+		oscillator[i].mask_fractionalBits = (0x00000001L << (32 - LOG2_WAVETABLE_SIZE)) - 1;
 		oscillator[i].mask_waveIndex = WAVETABLE_SIZE - 1;
-		oscillator[i].scaler_fractionalBits = 1.0 / ((float)WAVETABLE_SIZE);
+		oscillator[i].scaler_fractionalBits = ((float)WAVETABLE_SIZE) / BIT32_NORMALIZATION;
 
 		oscillator[i].fadeDim1 = 0.0;
 		oscillator[i].fadeDim1Increment = 0.0;
 
 		oscillator[i].wave000 = &(sinewave[0]);
 		oscillator[i].wave001 = &(squarewave[0]);
-	}
-}
-
-#define powf_2_32 4294967296.0f
-#define sampleRate 48000
-void set_midi(int channel, uint8_t midiPitch, uint8_t velocity)
-{
-	oscillator[channel].phaseIncrement = 440.0f * powf(2.0f, (float)((midiPitch - 69) / 12.0f));
-}
-void set_fade(int channel, float fade[3])
-{
-	oscillator[channel].fadeDim1 = fade[0];
-	oscillator[channel].fadeDim2 = fade[1];
-	oscillator[channel].fadeDim3 = fade[2];
-}
-void set_fade_delta(int channel, float fadeDelta)
-{
-	oscillator[channel].fadeDim1Increment = fadeDelta;
-}
-
-void handle_midi_channel_msg(uint8_t bytes[3])
-{
-	int cmd = bytes[0] & 0x80;
-	int channel = bytes[0] & 0x0f;
-	float temp_hard_coded_release = 0.5f;
-	switch (cmd)
-	{
-	case 0x80:
-	{
-		int midiKey = bytes[1] & 0x7f;
-		int velocity = bytes[2] & 0x7f;
-		set_fade_delta(channel, -1.0f / (temp_hard_coded_release * sampleRate));
-		break;
-	}
-	case 0x90:
-	{ //note on.
-		int midiKey = bytes[1] & 0x7f;
-		int velocity = bytes[2] & 0x7f;
-		set_midi(channel, midiKey, velocity);
-
-		//http://basicsynth.com/uploads/SF2-DLS.pdf
-		// full velocity = no attentuation;
-		float attentuate_cent_db = (-200.0 / 960) * log2((velocity * velocity) / (127 * 127));
-		float sustain = 0.7f, decay = 1.0f; //random hardcoded values for now
-		float decayPerSample = -1 * sustain / (decay * sampleRate);
-		set_fade_delta(channel, decayPerSample);
-		break;
-	}
-	default:
-		break; //TODO: break;
-	}
-}
-#define AUD_CTX_BUFFER 128
-void audio_thread_cb(uint32_t currentFrame, float output_left[NUM_OSCILLATORS][128], float output_right[NUM_OSCILLATORS][128], float gain[NUM_OSCILLATORS][128])
-{
-	for (int i = 0; i < NUM_OSCILLATORS; i++)
-	{
-		for (int output_offset = 0; output_offset < AUD_CTX_BUFFER; output_offset += SAMPLE_BLOCKSIZE)
-		{
-			oscillator[i].output_ptr = &(output_left[NUM_OSCILLATORS][output_offset]);
-			float _gain = gain[i][output_offset];
-			wavetable_1dimensional_oscillator(&oscillator[i]);
-		}
 	}
 }
