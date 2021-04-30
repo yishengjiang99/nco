@@ -1,9 +1,5 @@
 #include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <strings.h>
 #include <math.h>
-#include <string.h>
 //
 //  This typedef in wavetable_oscillator.h
 //
@@ -270,7 +266,7 @@ static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
 static float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
 static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
 
-void init_oscillators()
+wavetable_oscillator_data *init_oscillators(wavetable_oscillator_data *oscillator)
 {
 
 	//
@@ -296,4 +292,14 @@ void init_oscillators()
 		oscillator[i].wave000 = &(sinewave[0]);
 		oscillator[i].wave001 = &(squarewave[0]);
 	}
+	return &oscillator[0];
+}
+
+int wavetable_struct_size()
+{
+	return sizeof(wavetable_oscillator_data);
+}
+wavetable_oscillator_data *osc_ref(int channel)
+{
+	return &oscillator[channel];
 }

@@ -7,7 +7,9 @@
     "lib": "lib"
   },
   "dependencies": {
+    "draw-canvas-60fps": "^1.0.0",
     "fft": "^0.2.1",
+    "mkdiv": "^1.0.1",
     "sf2-sql": "^1.1.0"
   },
   "devDependencies": {

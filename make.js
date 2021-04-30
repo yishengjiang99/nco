@@ -2,46 +2,58 @@ const fs = require("fs");
 
 const execSync = require("child_process").execSync;
 // execSync("EMCC_DEBUG=1 emcc src/test.c -o test.html");
-const fns = `wavetable_2dimensional_oscillator,
-wavetable_1dimensional_oscillator,
-wavetable_0dimensional_oscillator,
-wavetable_3dimensional_oscillator,
-init_oscillators,
-set_midi,
-set_fade,
-set_fade_delta,
-malloc, free,
-handle_midi_channel_msg,
-audio_thread_cb`
-  .split(",")
-  .map((f) => "_" + f.trim());
+const fns = [
+  "wavetable_0dimensional_oscillator",
+  "wavetable_1dimensional_oscillator",
+  "wavetable_2dimensional_oscillator",
+  "wavetable_3dimensional_oscillator",
+  "init_oscillators",
+  "wavetable_struct_size",
+  "set_midi",
+  "malloc",
+  "free",
+  "handle_midi_channel_msg",
+  "audio_thread_cb",
+].map((fn) => `_${fn}`);
 
 execSync(
-  `emcc src/wavetable_oscillator.c \
+  `emcc src/app.c \
   -s WASM=1 \
+  -s BINARYEN_ASYNC_COMPILATION=0 \
   -s SINGLE_FILE=1 \
-	-o simple-kernel.wasmmodule.js \
 	--post-js es-module.js \
   -s EXPORTED_FUNCTIONS='${JSON.stringify(
     fns
-  )}' -o build/wavetable_oscillator.js`
+  )}' -o build/wavetable_oscillatorcc.js`
 );
-// );
-// fs.writeFileSync(
-//   `build/wavetable_oscillator.js`,
-//   `const wasmBinary = new Uint8Array([
-//     ${fs.readFileSync("build/wavetable_oscillator.wasm").join(",")}
-//   ]);
-// const module = new WebAssembly.Module(wasmBinary);
-// const mem = new WebAssembly.Memory({
-// initial: 100, //100 x 64k ..just putting in some safe values now
-// maximum: 100
-// });
-// const insts=new WebAssembly.Instance(module, {
-// env: {
-//   memory: mem,
-//    table: new WebAssembly.Table({ element: "anyfunc", initial: 2 })
-// },
-// });
-// export const { ${fns} }=inst.exports;`
-// );
+execSync("npx wa compile src/app.c -o build/wavetable_oscillator.wasm");
+
+fs.writeFileSync(
+  `build/wavetable_oscillator.js`,
+  `// prettier-ignore
+  const wasmBinary = new Uint8Array([
+    ${fs.readFileSync("build/wavetable_oscillator.wasm").join(",")}
+  ]);
+  const module = new WebAssembly.Module(wasmBinary);
+  const mem = new WebAssembly.Memory({
+    initial: 100, //100 x 64k ..just putting in some safe values now
+    maximum: 100,
+  });
+  const instance = new WebAssembly.Instance(module, {
+    env: {
+      memory: mem,
+      memset: (dest, src, len) => {
+        debugger;
+      },
+      powf: (base, exp) => Math.pow(base, exp),
+      table: new WebAssembly.Table({ element: "anyfunc", initial: 2 }),
+    },
+  });
+  export default {
+    mem,
+    HEAPU8: new Uint8Array(mem.buffer),
+    ...instance.exports,
+  };
+  
+  `
+);

@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <strings.h>
 #include "wavetable_oscillator.c"
 
@@ -12,18 +11,6 @@ void set_midi(int channel, uint8_t midiPitch)
 	float frequency = 440.0f * powf(2.0f, (float)(midiPitch - 69) / 12.0f);
 	int32_t phaseIncrement = (int32_t)(BIT32_NORMALIZATION * frequency / SAMPLE_RATE + 0.5f);
 }
-
-void set_fade(int channel, float fade[3])
-{
-	oscillator[channel].fadeDim1 = fade[0];
-	oscillator[channel].fadeDim2 = fade[1];
-	oscillator[channel].fadeDim3 = fade[2];
-}
-void set_fade_delta(int channel, float fadeDelta)
-{
-	oscillator[channel].fadeDim1Increment = fadeDelta;
-}
-
 void handle_midi_channel_msg(uint8_t bytes[3])
 {
 	int cmd = bytes[0] & 0x80;
@@ -35,9 +22,9 @@ void handle_midi_channel_msg(uint8_t bytes[3])
 	{
 		int midiKey = bytes[1] & 0x7f;
 		int velocity = bytes[2] & 0x7f;
-
-		float fade[3] = {0.0f, 0.0f, 0.0f};
-		set_fade(channel, fade);
+		oscillator[channel].fadeDim1 = 1;
+		oscillator[channel].fadeDim2 = 1;
+		oscillator[channel].fadeDim3 = 1;
 		break;
 	}
 	case 0x90:
@@ -45,20 +32,24 @@ void handle_midi_channel_msg(uint8_t bytes[3])
 		int midiKey = bytes[1] & 0x7f;
 		int velocity = bytes[2] & 0x7f;
 		set_midi(channel, midiKey);
+		oscillator[channel].fadeDim1 = 0;
+		oscillator[channel].fadeDim2 = 0;
+		oscillator[channel].fadeDim3 = 0;
 		break;
 	}
 	default:
 		break; //TODO: break;
 	}
 }
-void audio_thread_cb(uint32_t currentFrame, float outputBuffer[NUM_OSCILLATORS][AUD_CTX_BUFFER])
+#define AUDIO_THREAD_OUTPUT_BYTES AUD_CTX_BUFFER * sizeof(float)
+void audio_thread_cb(uint32_t currentFrame, float *outputBuffer)
 {
 	for (int i = 0; i < NUM_OSCILLATORS; i++)
 	{
-		bzero(&outputBuffer[NUM_OSCILLATORS][0], AUD_CTX_BUFFER * sizeof(float));
+		bzero(outputBuffer + i * AUDIO_THREAD_OUTPUT_BYTES, AUDIO_THREAD_OUTPUT_BYTES);
 		for (int output_offset = 0; output_offset < AUD_CTX_BUFFER - SAMPLE_BLOCKSIZE; output_offset += SAMPLE_BLOCKSIZE)
 		{
-			oscillator[i].output_ptr = &(outputBuffer[NUM_OSCILLATORS][output_offset]);
+			oscillator[i].output_ptr = outputBuffer + i * AUDIO_THREAD_OUTPUT_BYTES + output_offset;
 			wavetable_1dimensional_oscillator(&oscillator[i]);
 		}
 	}
