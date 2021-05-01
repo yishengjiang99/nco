@@ -44,9 +44,6 @@ fs.writeFileSync(
   const instance = new WebAssembly.Instance(module, {
     env: {
       memory: mem,
-      memset: (dest, src, len) => {
-        debugger;
-      },
       sinf:(x)=>Math.sin(x),
       powf: (base, exp) => Math.pow(base, exp),
       table: new WebAssembly.Table({ element: "anyfunc", initial: 6 }),

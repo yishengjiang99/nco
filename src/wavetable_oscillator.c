@@ -300,8 +300,8 @@ wavetable_oscillator_data *init_oscillators()
 		oscillator[i].mask_waveIndex = WAVETABLE_SIZE - 1;
 		oscillator[i].scaler_fractionalBits = ((float)WAVETABLE_SIZE) / BIT32_NORMALIZATION;
 
-		oscillator[i].fadeDim1 = 0.0;
-		oscillator[i].fadeDim1Increment = 0.0;
+		oscillator[i].fadeDim1 = 0.0f;
+		oscillator[i].fadeDim1Increment = 0.0f;
 
 		oscillator[i].wave000 = &(sinewave[0]);
 		oscillator[i].wave001 = &(squarewave[0]);
@@ -348,8 +348,11 @@ void handle_midi_channel_msg(uint8_t bytes[3])
 		break; //TODO: break;
 	}
 }
-void set_fade_1(int channel, float fade, float fade_delta)
+void set_fade_1(int channel, float fade1)
 {
-	oscillator[channel].fadeDim1 = fade;
+	oscillator[channel].fadeDim1 = fade1;
+}
+void set_fade_1_delta(int channel, float fade_delta)
+{
 	oscillator[channel].fadeDim1 = fade_delta;
 }
