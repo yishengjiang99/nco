@@ -1,4 +1,4 @@
-# nco (numerically controlled oscillator(s)
+# nco (numerically controlled oscillator(s))
 
 WebAssembly porting of wavetable_oscillator.c from (the) Robert Bristow-Johnson.
 
