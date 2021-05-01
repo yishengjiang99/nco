@@ -16,16 +16,6 @@ const fns = [
   "audio_thread_cb",
 ].map((fn) => `_${fn}`);
 
-// execSync(
-//   `emcc src/app.c \
-//   -s WASM=1 \
-//   -s BINARYEN_ASYNC_COMPILATION=0 \
-//   -s SINGLE_FILE=1 \
-// 	--post-js es-module.js \
-//   -s EXPORTED_FUNCTIONS='${JSON.stringify(
-//     fns
-//   )}' -o build/wavetable_oscillatorcc.js`
-// );
 execSync(
   "npx wa compile src/wavetable_oscillator.c -o build/wavetable_oscillator.wasm"
 );
@@ -44,6 +34,7 @@ fs.writeFileSync(
   const instance = new WebAssembly.Instance(module, {
     env: {
       memory: mem,
+
       sinf:(x)=>Math.sin(x),
       powf: (base, exp) => Math.pow(base, exp),
       table: new WebAssembly.Table({ element: "anyfunc", initial: 6 }),
