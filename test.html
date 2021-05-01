@@ -1,50 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Mocha</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script type="module">
+  const workercode = /* javascript */ `import {init} from "./web/wavetable_osc_glue_code.js"
+        init().then(({table})=>postMessage(table)).catch(e=>{
+          postMessage(e);
+        });`;
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/8.3.2/mocha.min.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/mocha/8.3.2/mocha.min.css"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.4/chai.min.js"></script>
-  </head>
-  <body>
-    <div id="mocha">
-      <canvas></canvas> <button>play</button> <canvas></canvas>
-    </div>
-    <script></script>
-    <script type="module">
-      import Module from "../build/wavetable_oscillator.js";
-      Module["onRuntimeInitialized"] = () => {
-        function tbl_proxy(Module) {
-          const heap = Module.HEAPU8;
-          const ptr = Module._init_oscillators();
-          const dv = new DataView(heap, ptr, Module._wavetable_struct_size());
-          const [
-            output_ptr,
-            samples_per_block,
-            phase,
-            phaseIncrement,
-            frequencyIncrement,
-            num_fractionalBits,
-            mask_fractionalBits,
-            mask_wavIndex,
-            scaler_fractionalBits,
-            fadeDim1,
-            fadeDim1Increment,
-            fadeDim2,
-            fadeDim2Increment,
-            fadeDim3,
-            fadeDim3Increment,
-          ] = [];
-        }
-      };
-
-      //   mocha.run();
-    </script>
-  </body>
-</html>
+  const worker = new Worker("./web/wavetable_osc_glue_code.js", {
+    type: "module",
+  });
+  worker.onmessage = (e) => {
+    debugger;
+    document.write(JSON.stringify(table));
+  };
+  worker.onerror = (e) => {
+    console.log(e.message);
+    console.trace(e);
+    throw e;
+  };
+</script>

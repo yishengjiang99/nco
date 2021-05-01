@@ -1,5 +1,16 @@
 #include <stdint.h>
 #include <math.h>
+#define NUM_OSCILLATORS 1
+#define SAMPLE_BLOCKSIZE 128
+
+#define MASK_FRACTIONAL_BITS 0x000FFFFF
+#define MASK_WAVEINDEX 0x00000FFFUL
+#define WAVETABLE_SIZE 4096
+#define LOG2_WAVETABLE_SIZE 12
+
+#define PI 3.1415926539f
+#define BIT32_NORMALIZATION 4294967296.0f
+#define SAMPLE_RATE 48000
 //
 //  This typedef in wavetable_oscillator.h
 //
@@ -91,7 +102,6 @@ void wavetable_1dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 
 	float *wave000 = this_oscillator->wave000;
 	float *wave001 = this_oscillator->wave001;
-	phaseIncrement = 4;
 	while (num_samples_remaining-- > 0)
 	{
 
@@ -250,25 +260,28 @@ void wavetable_3dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 	this_oscillator->phaseIncrement = phaseIncrement;
 }
 
-#define NUM_OSCILLATORS 16
-#define SAMPLE_BLOCKSIZE 8
-
-#define MASK_FRACTIONAL_BITS 0x000FFFFF
-#define MASK_WAVEINDEX 0x00000FFFUL
-#define NUM_OSCILLATORS 16
-#define SAMPLE_BLOCKSIZE 8
-#define WAVETABLE_SIZE 4096
-#define LOG2_WAVETABLE_SIZE 12
-
-#define PI 3.1415926539f
-#define BIT32_NORMALIZATION 4294967296.0f
-
 static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
 static float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
 static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
 
 wavetable_oscillator_data *init_oscillators()
 {
+
+	//
+	//	This sets up two wavetables for interpolation in one dimension.
+	//
+	//float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
+
+	for (int n = 0; n < WAVETABLE_SIZE; n++)
+	{
+		sinewave[n] = sinf(2.0 * PI * ((float)n) / (float)WAVETABLE_SIZE);
+	}
+
+	for (int n = 0; n < WAVETABLE_SIZE / 2; n++)
+	{
+		squarewave[n] = 0.5;
+		squarewave[n + WAVETABLE_SIZE / 2] = -0.5;
+	}
 
 	//
 	//	This sets up NUM_OSCILLATORS (16) simulataneous waveform oscillators
@@ -287,8 +300,8 @@ wavetable_oscillator_data *init_oscillators()
 		oscillator[i].mask_waveIndex = WAVETABLE_SIZE - 1;
 		oscillator[i].scaler_fractionalBits = ((float)WAVETABLE_SIZE) / BIT32_NORMALIZATION;
 
-		oscillator[i].fadeDim1 = 0.0;
-		oscillator[i].fadeDim1Increment = 0.0;
+		oscillator[i].fadeDim1 = 0.0f;
+		oscillator[i].fadeDim1Increment = 0.0f;
 
 		oscillator[i].wave000 = &(sinewave[0]);
 		oscillator[i].wave001 = &(squarewave[0]);
@@ -300,7 +313,46 @@ int wavetable_struct_size()
 {
 	return sizeof(wavetable_oscillator_data);
 }
-wavetable_oscillator_data *osc_ref(int channel)
+
+void set_midi(int channel, uint8_t midiPitch)
 {
-	return &oscillator[channel];
+	float frequency = 440.0f * powf(2.0f, (float)(midiPitch - 69) / 12.0f);
+	oscillator[channel].phaseIncrement = (int32_t)(BIT32_NORMALIZATION * frequency / SAMPLE_RATE + 0.5f);
+}
+void handle_midi_channel_msg(uint8_t bytes[3])
+{
+	int cmd = bytes[0] & 0x80;
+	int channel = bytes[0] & 0x0f;
+	float temp_hard_coded_release = 0.5f;
+	switch (cmd)
+	{
+	case 0x80:
+	{
+		int midiKey = bytes[1] & 0x7f;
+		int velocity = bytes[2] & 0x7f;
+		oscillator[channel].fadeDim1Increment = 0.1;
+
+		break;
+	}
+	case 0x90:
+	{ //note on.
+		int midiKey = bytes[1] & 0x7f;
+		int velocity = bytes[2] & 0x7f;
+		set_midi(channel, midiKey);
+		oscillator[channel].fadeDim1 = 0;
+		oscillator[channel].fadeDim2 = 0;
+		oscillator[channel].fadeDim3 = 0;
+		break;
+	}
+	default:
+		break; //TODO: break;
+	}
+}
+void set_fade_1(int channel, float fade1)
+{
+	oscillator[channel].fadeDim1 = fade1;
+}
+void set_fade_1_delta(int channel, float fade_delta)
+{
+	oscillator[channel].fadeDim1 = fade_delta;
 }

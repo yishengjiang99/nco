@@ -4,9 +4,37 @@
     <title>Wavetable Oscillators</title>
     <link
       rel="stylesheet"
-      href="https://cdn.rawgit.com/Chalarangelo/mini.css/v3.0.1/dist/mini-default.min.css"
+      href="//cdn.rawgit.com/Chalarangelo/mini.css/v3.0.1/dist/mini-dark.min.css"
+      crossorigin="anonymous"
     />
+    <style>
+      input[type="range"] {
+        writing-mode: bt-lr;
+        -webkit-appearance: slider-vertical;
+      }
+    </style>
   </head>
-  <body class="container responsive-margin"></body>
-  <script type="module" src="./web/index.js"></script>
+  <body>
+    <header></header>
+    <main class="container responsive-margin splash"></main>
+    <button class="primary splash">start</button>
+    <input
+      id="onsetFade1"
+      aria-label="fadeDim1"
+      type="range"
+      step="0.01"
+      min="0"
+      max="1"
+      value="1"
+    />
+    <input
+      id="fadeVelocity"
+      aria-label="fadeDim1"
+      type="range"
+      step="1"
+      min="0"
+      max="10"
+    />
+  </body>
+  <script type="module" src="./web/main-thread.js"></script>
 </html>
