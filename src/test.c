@@ -40,17 +40,24 @@ int main()
 		for (int i = 0; i < SAMPLE_BLOCKSIZE; i++)                                                           \
 			printf("\n%u, %f, %04f ", oscillator[0].phase, oscillator[0].fadeDim1, output_samples[0][i]);      \
 	}
-	FILE *w = popen("ffmpeg -y -ac 1 -f f32le -i pipe:0 -f wav sweep_midi_35_70_sine_square_cross.wav", "w");
+	FILE *w = popen("ffplay  -ac 2 -ar 48000 -f f32le -i pipe:0", "w");
+	oscillator[0].fadeDim1Increment = 1.0f / 44100.0f;
 
 	for (int midi = 35; midi < 70; midi++)
 	{
 		set_midi(0, midi);
-		for (int i = 0; i < 24000; i += 128)
+		oscillator[0].fadeDim1Increment = -55.0f / 44100.0f;
+		oscillator[0].fadeDim1 = 1.0f; // = 1.0f / 44100.0f;
+		oscillator[0].fadeDim0 = 0.0f; // = 1.0f / 44100.0f;
+		oscillator[0].fadeDim0Increment = 55.0f / 44100.0f;
+
+		for (int i = 0; i < 48000; i += 128)
 		{
 			wavetable_1dimensional_oscillator(&oscillator[0]);
 			//	fwrite(oscillator[0].output_ptr, 4, 128, f);
 			fwrite(oscillator[0].output_ptr, 4, 128, w);
 		}
+		break;
 	}
 	//	pclose(f);
 	pclose(w);

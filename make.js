@@ -16,17 +16,19 @@ const fns = [
   "audio_thread_cb",
 ].map((fn) => `_${fn}`);
 
+// execSync(
+//   `emcc src/app.c \
+//   -s WASM=1 \
+//   -s BINARYEN_ASYNC_COMPILATION=0 \
+//   -s SINGLE_FILE=1 \
+// 	--post-js es-module.js \
+//   -s EXPORTED_FUNCTIONS='${JSON.stringify(
+//     fns
+//   )}' -o build/wavetable_oscillatorcc.js`
+// );
 execSync(
-  `emcc src/app.c \
-  -s WASM=1 \
-  -s BINARYEN_ASYNC_COMPILATION=0 \
-  -s SINGLE_FILE=1 \
-	--post-js es-module.js \
-  -s EXPORTED_FUNCTIONS='${JSON.stringify(
-    fns
-  )}' -o build/wavetable_oscillatorcc.js`
+  "npx wa compile src/wavetable_oscillator.c -o build/wavetable_oscillator.wasm"
 );
-execSync("npx wa compile src/app.c -o build/wavetable_oscillator.wasm");
 
 fs.writeFileSync(
   `build/wavetable_oscillator.js`,
@@ -45,10 +47,12 @@ fs.writeFileSync(
       memset: (dest, src, len) => {
         debugger;
       },
+      sinf:(x)=>Math.sin(x),
       powf: (base, exp) => Math.pow(base, exp),
-      table: new WebAssembly.Table({ element: "anyfunc", initial: 2 }),
+      table: new WebAssembly.Table({ element: "anyfunc", initial: 6 }),
     },
   });
+
   export default {
     mem,
     HEAPU8: new Uint8Array(mem.buffer),
