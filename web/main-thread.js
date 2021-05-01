@@ -1,4 +1,4 @@
-import { logdiv, mkdiv } from "../node_modules/mkdiv/rollup.js";
+import { logdiv, mkdiv } from "../mkdiv.js";
 const BIT32_NORMALIZATION = 4294967296.0;
 const main = document.querySelector("main");
 const { stderr, stdout } = logdiv({ container: main });
