@@ -8,33 +8,36 @@
       crossorigin="anonymous"
     />
     <style>
-      input[type="range"] {
-        writing-mode: bt-lr;
-        -webkit-appearance: slider-vertical;
+      body {
+        display: grid;
+        place-items: center;
       }
     </style>
   </head>
   <body>
     <header></header>
     <main class="container responsive-margin splash"></main>
-    <button class="primary splash">start</button>
-    <input
-      id="onsetFade1"
-      aria-label="fadeDim1"
-      type="range"
-      step="0.01"
-      min="0"
-      max="1"
-      value="1"
-    />
-    <input
-      id="fadeVelocity"
-      aria-label="fadeDim1"
-      type="range"
-      step="1"
-      min="0"
-      max="10"
-    />
+    <span
+      ><label for="onsetFade1">FadeDim1</label>
+      <input
+        id="onsetFade1"
+        aria-label="fadeDim1"
+        type="range"
+        step="0.01"
+        min="0"
+        max="1"
+        value="1"
+    /></span>
+    <span
+      ><label for="fadeVelocity">FadeDim1</label>
+      <input
+        id="fadeVelocity"
+        aria-label="fadeVelocity"
+        type="range"
+        step="1"
+        min="0"
+        max="10"
+    /></span>
   </body>
   <script type="module" src="./web/main-thread.js"></script>
 </html>

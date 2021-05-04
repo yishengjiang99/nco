@@ -119,6 +119,11 @@ void wavetable_1dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 
 		phase += phaseIncrement;
 		phaseIncrement += frequencyIncrement;
+		if (fadeDim1 < 0)
+		{
+			fadeDim1 = 0;
+			fadeDim1Increment = 0;
+		}
 
 		*out++ = _wave000;
 	}
