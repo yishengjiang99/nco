@@ -4,11 +4,18 @@ let awpport; //msg port to main thread; instantiates in the RendProc constructor
 const osc_ref = Module.init_oscillators();
 const osc_struct_size = Module.wavetable_struct_size();
 console.assert(osc_struct_size > 1);
-const faderView = new DataView(
-  Module.mem.buffer,
-  osc_ref + 9 * Float32Array.BYTES_PER_ELEMENT,
-  24
-);
+const phaseView = (channel) =>
+  new DataView(
+    Module.mem.buffer,
+    osc_ref + osc_struct_size * channel + 2 * Float32Array.BYTES_PER_ELEMENT,
+    24
+  );
+const faderView = (channel) =>
+  new DataView(
+    Module.mem.buffer,
+    osc_ref + osc_struct_size * channel + 9 * Float32Array.BYTES_PER_ELEMENT,
+    24
+  );
 function osc_info(ref) {
   const table = new Uint32Array(Module.mem.buffer, osc_ref, osc_struct_size);
   const [
@@ -45,20 +52,33 @@ function osc_info(ref) {
 function onMSG(e) {
   const { data, target } = e;
   e.target.postMessage(e.data);
-  const { setMidi, setFade, setFadeDelta, keyOn, keyOff, info } = e.data;
+  const {
+    setMidi,
+    setFade,
+    setFadeDelta,
+    setPhaseIncrement,
+    keyOn,
+    keyOff,
+    info,
+  } = e.data;
   if (setMidi) {
     const { channel, value } = setMidi;
     Module.set_midi(channel, value);
     awpport.postMessage({ osc_table: osc_info(osc_info) });
   }
+  if (setPhaseIncrement) {
+    const { channel, value } = setPhaseIncrement;
+    phaseView(channel).setFloat32(2, value, true);
+    awpport.postMessage({ osc_table: osc_info(osc_info) });
+  }
   if (setFade) {
     const { channel, value } = setFade;
-    faderView.setFloat32(0, value, true);
+    faderView(channel).setFloat32(0, value, true);
     awpport.postMessage({ osc_table: osc_info(osc_info) });
   }
   if (setFadeDelta) {
     const { channel, value } = setFadeDelta;
-    faderView.setFloat32(4, value, true);
+    faderView(channel).setFloat32(4, value, true);
     awpport.postMessage({ osc_table: osc_info(osc_info) });
   }
   if (keyOn) {
