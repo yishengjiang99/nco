@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
+#include <mm_malloc.h>
+#include <string.h>
 
 #include "wavetable_oscillator.c"
 typedef struct wav_header
@@ -27,23 +29,34 @@ typedef struct wav_header
 int main()
 {
 	void *ref = init_oscillators();
+	FILE *fd;
+	float *piano = (float *)malloc(sizeof(float) * WAVETABLE_SIZE);
+	fd = fopen("wvtable_pcm/Piano_img.pcm", "rb");
+	fread(piano, sizeof(float), WAVETABLE_SIZE, fd);
+	fclose(fd);
 
-	FILE *w = popen("ffplay  -ac 2 -ar 48000 -f f32le -i pipe:0", "w");
+	fd = fopen("wvtable_pcm/02_Triangle_real.pcm", "rb");
+	fread(oscillator[0].wave001, sizeof(float), WAVETABLE_SIZE, fd);
+	fclose(fd);
+	oscillator[0].wave000 = piano;
+	oscillator[0].wave001 = &(squarewave[0]);
+	oscillator[0].wave010 = &(sinewave[0]);
+	oscillator[0].wave011 = &(silence2[0]);
 
-	for (int midi = 60; midi < 70; midi++)
+	FILE *w = popen("ffplay -showmode rdft -ac 1 -ar 48000 -f f32le -i pipe:0", "w");
+	set_midi(0, 44);
+	oscillator[0].fadeDim1 = 0.0f;
+	oscillator[0].fadeDim1Increment = 0.0f; //+55.0f / 48000;
+
+	oscillator[0].fadeDim2 = 1.0f;
+	oscillator[0].fadeDim2Increment = -55.0f / 48000;
+
+	int n = 48000;
+	while (n > 0)
 	{
-		set_midi(0, midi);
-		oscillator[0].fadeDim1Increment = 355.0f / WAVETABLE_SIZE;
-		oscillator[0].fadeDim1 = .1f; // = 1.0f / 44100.0f;
-
-		for (int i = 0; i < 48000; i += SAMPLE_BLOCKSIZE)
-		{
-			wavetable_1dimensional_oscillator(&oscillator[0]);
-			//	fwrite(oscillator[0].output_ptr, 4, 128, f);
-			fwrite(oscillator[0].output_ptr, 4, SAMPLE_BLOCKSIZE, w);
-		}
-		//	break;
+		wavetable_1dimensional_oscillator(&oscillator[0]);
+		fwrite(oscillator[0].output_ptr, sizeof(float), SAMPLE_BLOCKSIZE, w);
+		n -= SAMPLE_BLOCKSIZE;
 	}
-	//	pclose(f);
-	pclose(w);
+	fclose(w);
 }

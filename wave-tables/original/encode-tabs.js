@@ -14,8 +14,11 @@ fs.readdirSync("./wave-tables/original").forEach((file) => {
     rs[i] = real;
     is[i] = img;
   });
-  fs.writeFileSync("wvtable_pcm/" + file + "_real.pcm", rs);
-  fs.writeFileSync("wvtable_pcm/" + file + "_img.pcm", is);
+
+  const str = `${img[1]}`;
+  fs.writeFileSync("wavetables.c", `float file[4096]= `);
+
+  //  fs.writeFileSync("wvtable_pcm/" + file + "_img.pcm", is);
 
   //console.log(rs, is);
 });

@@ -236,3 +236,5 @@ void bit_reverse(register complex *x, int n)
 		}
 	}
 }
+#include <stdio.h>
+#include <stdlib.h>

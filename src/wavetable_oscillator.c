@@ -1,14 +1,14 @@
 #include <stdint.h>
 #include <math.h>
 #define NUM_OSCILLATORS 1
-#define SAMPLE_BLOCKSIZE 128
+#define SAMPLE_BLOCKSIZE 48000
 
 #define MASK_FRACTIONAL_BITS 0x000FFFFF
 #define MASK_WAVEINDEX 0x00000FFFUL
 #define WAVETABLE_SIZE 4096
 #define LOG2_WAVETABLE_SIZE 12
 
-#define PI 3.1415926539f
+#define PIF 3.1415926539f
 #define BIT32_NORMALIZATION 4294967296.0f
 #define SAMPLE_RATE 48000
 //
@@ -268,6 +268,8 @@ void wavetable_3dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
 static float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
 static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
+static float silence[WAVETABLE_SIZE] = {0.0f};
+static float silence2[WAVETABLE_SIZE] = {0.0f};
 
 wavetable_oscillator_data *init_oscillators()
 {
@@ -279,13 +281,15 @@ wavetable_oscillator_data *init_oscillators()
 
 	for (int n = 0; n < WAVETABLE_SIZE; n++)
 	{
-		sinewave[n] = sinf(2.0 * PI * ((float)n) / (float)WAVETABLE_SIZE);
+		sinewave[n] = sinf(2.0 * PIF * ((float)n) / (float)WAVETABLE_SIZE);
 	}
 
-	for (int n = 0; n < WAVETABLE_SIZE / 2; n++)
+	for (int n = 0; n < WAVETABLE_SIZE / 4; n++)
 	{
 		squarewave[n] = 0.5;
-		squarewave[n + WAVETABLE_SIZE / 2] = -0.5;
+		squarewave[n + WAVETABLE_SIZE / 4] = -0.5;
+		squarewave[n + 2 * WAVETABLE_SIZE / 4] = 0.5;
+		squarewave[n + 3 * WAVETABLE_SIZE / 4] = -0.5;
 	}
 
 	//
@@ -310,6 +314,8 @@ wavetable_oscillator_data *init_oscillators()
 
 		oscillator[i].wave000 = &(sinewave[0]);
 		oscillator[i].wave001 = &(squarewave[0]);
+		oscillator[i].wave010 = &(silence[0]);
+		oscillator[i].wave011 = &(silence2[0]);
 	}
 	return &oscillator[0];
 }
