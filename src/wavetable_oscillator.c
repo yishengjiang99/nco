@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <math.h>
-#define NUM_OSCILLATORS 1
-#define SAMPLE_BLOCKSIZE 48000
+#define NUM_OSCILLATORS 16
+#define SAMPLE_BLOCKSIZE 128
 
 #define MASK_FRACTIONAL_BITS 0x000FFFFF
 #define MASK_WAVEINDEX 0x00000FFFUL

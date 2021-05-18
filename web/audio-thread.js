@@ -4,6 +4,7 @@ let awpport; //msg port to main thread; instantiates in the RendProc constructor
 const osc_ref = Module.init_oscillators();
 const osc_struct_size = Module.wavetable_struct_size();
 console.assert(osc_struct_size > 1);
+
 const phaseView = (channel) =>
   new DataView(
     Module.mem.buffer,
@@ -18,12 +19,8 @@ const faderView = (channel) =>
   );
 function osc_info(ref) {
   const table = new Uint32Array(Module.mem.buffer, osc_ref, osc_struct_size);
-  const [
-    output_ptr,
-    samples_per_block,
-    phase,
-    phaseIncrement,
-  ] = new Uint32Array(Module.mem.buffer, osc_ref, 4);
+  const [output_ptr, samples_per_block, phase, phaseIncrement] =
+    new Uint32Array(Module.mem.buffer, osc_ref, 4);
   const [
     fadeDim1,
     fadeDim1Increment,
