@@ -98,7 +98,7 @@ async function playt(tablename: string) {
   osc.start();
   osc.stop(1.1);
 
-  ctx.startRendering().then((ab: AudioBuffer) => {
+  return ctx.startRendering().then((ab: AudioBuffer) => {
     const float = ab.getChannelData(0);
     const { start, stop } = draw(
       function getData() {
@@ -107,6 +107,7 @@ async function playt(tablename: string) {
       4096 / 2,
       after
     );
+    return float;
   });
 }
 
@@ -129,3 +130,14 @@ document.body.append(
 );
 console.log(pre);
 document.body.append(pre);
+tbs.map((t) => {
+  playt(t)
+    .then((fl) =>
+      fetch("upload.php", {
+        method: "POST",
+        headers: { filename: t + "_4096.pcm" },
+        body: fl,
+      })
+    )
+    .catch(console.log);
+});

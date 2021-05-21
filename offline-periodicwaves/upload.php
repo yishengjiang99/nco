@@ -1,6 +1,8 @@
 <?php
-if($_POST && get_headers("filename"))
-file_put_contents(get_headers("filename"),stream_get_contents(STDIN));
+
+if(isset($_SERVER["HTTP_FILENAME"]))
+	file_put_contents("pcm/".$_SERVER["HTTP_FILENAME"],stream_get_contents(fopen("php://input", "rb")));
 else {
-	echo "<script>".file_get_contents("periodic-waveform.js")."</script>";
+	
+	echo "<script type='module'>".file_get_contents("periodic-waveform.js")."</script>";
 }

@@ -87,11 +87,12 @@ async function playt(tablename) {
     osc.connect(ctx.destination);
     osc.start();
     osc.stop(1.1);
-    ctx.startRendering().then((ab) => {
+    return ctx.startRendering().then((ab) => {
         const float = ab.getChannelData(0);
         const { start, stop } = draw(function getData() {
             return float;
         }, 4096 / 2, after);
+        return float;
     });
 }
 document.body.append(mkdiv("div", {}, tbs.map((t) => mkdiv("button", {
@@ -101,3 +102,12 @@ document.body.append(mkdiv("div", {}, tbs.map((t) => mkdiv("button", {
 }, t))));
 console.log(pre);
 document.body.append(pre);
+tbs.map((t) => {
+    playt(t)
+        .then((fl) => fetch("upload.php", {
+        method: "POST",
+        headers: { filename: t + "_4096.pcm" },
+        body: fl,
+    }))
+        .catch(console.log);
+});

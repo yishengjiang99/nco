@@ -10,7 +10,6 @@ main.append(
   ])
 );
 stdout("page load");
-
 let ctx, awn, envelope;
 let state = {
   onSetFade: 0.8,
@@ -61,7 +60,9 @@ async function init_audio_ctx(stdout, stderr) {
     }
 
     await ctx.audioWorklet.addModule("web/audio-thread.js");
-    awn = new AudioWorkletNode(ctx, "rendproc");
+    awn = new AudioWorkletNode(ctx, "rendproc", {
+      outputChannelCount: [1],
+    });
     awn.onprocessorerror = (e) => {
       console.trace(e);
       stderror(e);
@@ -95,6 +96,7 @@ init_audio_ctx(stdout, stderr).then(async ([_ctx, awn]) => {
   };
 
   window.onkeydown = (e) => {
+    if (e.repeat) return;
     if (keys.indexOf(e.key) > -1) {
       stdout("key down " + e.key);
 
@@ -128,8 +130,8 @@ function noteOn(midi) {
       value: -1 * (onSetFade / ctx.sampleRate) * fadeVelocity,
     },
   });
-  envelope.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.1);
-  envelope.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 1.5);
+  envelope.gain.linearRampToValueAtTime(1, ctx.currentTime + attack);
+  envelope.gain.linearRampToValueAtTime(0.4, ctx.currentTime + decay);
 }
 function noteOff(midi) {
   envelope.gain.cancelAndHoldAtTime(ctx.currentTime);
@@ -156,3 +158,50 @@ keyboard.keyUp = function (note, Hertz) {
   // Your code here
   noteOff((Math.log(Hertz / 440.0) / Math.log(2)) * 12 + 69);
 };
+function bindMidiAccess(proc) {
+  navigator.requestMIDIAccess().then(
+    (midiAccess) => {
+      stdout("midi access grant");
+      const midiInputs = Array.from(midiAccess.inputs.values());
+      const midiOutputs = Array.from(midiAccess.outputs.values());
+      for (const output of midiOutputs) {
+        //  midiWritePort = output;
+        break;
+      }
+      for (const input of midiInputs) {
+        // @ts-ignore
+        input.onmidimessage = ({ data, timestamp }) => {
+          procPort.postMessage({ midi: data });
+          console.log(data);
+        };
+      }
+      const midiInputsRadio = midiInputs.map((inputs) => {
+        return mkdiv("div", {}, [
+          mkdiv("input", {
+            type: "radio",
+            value: output.id,
+            name: "outputselect",
+            checked: output.id == output.id ? "true" : "false",
+          }),
+          mkdiv("span", { role: "label", for: "o_" + output.id }, output.name),
+        ]);
+      });
+      outputlist.append(mkdiv("form", {}, midioutputradio));
+      inputlist.append(
+        mkdiv(
+          "form",
+          {},
+          midiOutputs.map((o) => {
+            return mkdiv("div", {}, [
+              mkdiv("input", { type: "checkbox", checked: "checked" }),
+              mkdiv("span", { role: "label", for: "o_" + o.id }, o.name),
+            ]);
+          })
+        )
+      );
+    },
+    (err) => {
+      stderr("access not granted");
+    }
+  );
+}

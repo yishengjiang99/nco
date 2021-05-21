@@ -24,7 +24,7 @@ const draw = function (getData, lenght) {
   let timer;
   function draw() {
     const dataArrayOrDone = getData();
-    if (dataArrayOrDone === false || dataArrayOrDone === null) {
+    if (dataArrayOrDsse === false || dataArrayOrDone === null) {
       return;
     } else {
       dataArray = dataArrayOrDone;
