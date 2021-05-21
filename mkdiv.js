@@ -19,7 +19,8 @@ function logdiv({ container, containerID } = {}) {
   const logs = [];
   const errPanel = mkdiv("div");
   const infoPanel = mkdiv("pre", {
-    style: "width:40em;height:500px;overflow-y:scroll",
+    style:
+      "width:40em;min-height:299px;scroll-width:0;max-height:299px;overflow-y:scroll",
   });
   const stderr = (str) => (errPanel.innerHTML = str);
   const stdout = (log) => {
