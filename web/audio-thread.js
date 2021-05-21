@@ -4,21 +4,34 @@ let awpport; //msg port to main thread; instantiates in the RendProc constructor
 const osc_ref = Module.init_oscillators();
 const osc_struct_size = Module.wavetable_struct_size();
 console.assert(osc_struct_size > 1);
+const soundCards = [];
+const phaseViews = [];
+const faderViews = [];
+for (let i = 0; i < 16; i++) {
+  const ptr = new Uint32Array(
+    Module.mem.buffer,
+    osc_ref + osc_struct_size * i,
+    1
+  )[0];
 
-const phaseView = (channel) =>
-  new DataView(
-    Module.mem.buffer,
-    osc_ref + osc_struct_size * channel + 2 * Float32Array.BYTES_PER_ELEMENT,
-    24
+  soundCards.push(new Float32Array(Module.mem.buffer, ptr, 128));
+  phaseViews.push(
+    new DataView(
+      Module.mem.buffer,
+      osc_ref + osc_struct_size * i + 2 * Float32Array.BYTES_PER_ELEMENT,
+      24
+    )
   );
-const faderView = (channel) =>
-  new DataView(
-    Module.mem.buffer,
-    osc_ref + osc_struct_size * channel + 9 * Float32Array.BYTES_PER_ELEMENT,
-    24
+  faderViews.push(
+    new DataView(
+      Module.mem.buffer,
+      osc_ref + osc_struct_size * i + 9 * Float32Array.BYTES_PER_ELEMENT,
+      24
+    )
   );
+}
 function osc_info(ref) {
-  const table = new Uint32Array(Module.mem.buffer, osc_ref, osc_struct_size);
+  const table = new Uint32Array(Module.mem.buffer, ref, osc_struct_size);
   const [output_ptr, samples_per_block, phase, phaseIncrement] =
     new Uint32Array(Module.mem.buffer, osc_ref, 4);
   const [
@@ -58,49 +71,47 @@ function onMSG(e) {
     keyOff,
     info,
   } = e.data;
+  const chref = (ch) => osc_ref + osc_struct_size * ch;
+
   if (setMidi) {
     const { channel, value } = setMidi;
     Module.set_midi(channel, value);
-    awpport.postMessage({ osc_table: osc_info(osc_info) });
+    awpport.postMessage({
+      osc_table: osc_info(chref(channel)),
+    });
   }
   if (setPhaseIncrement) {
     const { channel, value } = setPhaseIncrement;
-    phaseView(channel).setFloat32(2, value, true);
-    awpport.postMessage({ osc_table: osc_info(osc_info) });
+    phaseViews[channel].setFloat32(2, value, true);
+    awpport.postMessage({
+      osc_table: osc_info(chref(channel)),
+    });
   }
   if (setFade) {
     const { channel, value } = setFade;
-    faderView(channel).setFloat32(0, value, true);
-    awpport.postMessage({ osc_table: osc_info(osc_info) });
+    faderViews[channel].setFloat32(0, value, true);
+    awpport.postMessage({
+      osc_table: osc_info(chref(channel)),
+    });
   }
   if (setFadeDelta) {
     const { channel, value } = setFadeDelta;
-    faderView(channel).setFloat32(4, value, true);
-    awpport.postMessage({ osc_table: osc_info(osc_info) });
-  }
-  if (keyOn) {
-    const { channel, midi, vel } = keyOn;
-    awpport.handle_midi_channel_msg([0x90 | channel, midi & 0x7f, vel & 0x7f]);
-  }
-  if (keyOff) {
-    const { channel, midi, vel } = keyOff;
-    awpport.handle_midi_channel_msg(
-      new Uint8Array([0x80 | channel, midi & 0x7f, vel & 0x7f])
-    );
+    faderViews[channel].setFloat32(4, value, true);
+    awpport.postMessage({
+      osc_table: osc_info(chref(channel)),
+    });
   }
   if (info) {
     awpport.postMessage({ osc_table: osc_ref });
   }
 }
-function get_sound(channel) {
-  const flrr = new DataView(
-    Module.HEAPU8.buffer,
-    osc_ref,
-    128 * Float32Array.BYTES_PER_ELEMENT
-  );
-  Module.wavetable_1dimensional_oscillator(osc_ref);
-
-  return flrr;
+function spinOscillators(channel) {
+  for (let i = 0; i < 16; i++) {
+    for (let f = 0; f < 128; f++) {
+      soundCards[i][f] = 0;
+    }
+    Module.wavetable_1dimensional_oscillator(osc_ref + osc_struct_size * i);
+  }
 }
 
 class RendProc extends AudioWorkletProcessor {
@@ -114,20 +125,12 @@ class RendProc extends AudioWorkletProcessor {
     this.lastUpdate = 0;
     awpport = this.port;
   }
-  process(_, outputs) {
-    const flrr = get_sound();
-    for (let j = 0; j < 128; j++) {
-      outputs[0][0][j] = flrr.getFloat32(j * 4, true); //[i];
+  process(inputs, outputs) {
+    for (let i = 0; i < outputs.length; i++) {
+      outputs[i][0].set(soundCards[i]);
+      outputs[i][1].set(soundCards[i]);
     }
-    if (currentFrame - this.lastUpdate > 1000) {
-      const sum = outputs[0][0].reduce((prev, v) => prev + v, 0);
-      this.port.postMessage({
-        currentFrame,
-        sum: sum * sum,
-        osc_table: osc_info(Module.HEAPU8, osc_ref),
-      });
-      this.lastUpdate = currentFrame;
-    }
+    spinOscillators();
     return true;
   }
 }

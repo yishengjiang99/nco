@@ -116,6 +116,8 @@ void wavetable_1dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 		_wave000 += (_wave001 - _wave000) * fadeDim1;
 
 		fadeDim1 += fadeDim1Increment;
+		if (fadeDim1 < 0.0f || fadeDim1 > 1.0f)
+			fadeDim1Increment = 0;
 
 		phase += phaseIncrement;
 		phaseIncrement += frequencyIncrement;
@@ -268,8 +270,8 @@ void wavetable_3dimensional_oscillator(wavetable_oscillator_data *this_oscillato
 static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
 static float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
 static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
-static float silence[WAVETABLE_SIZE] = {0.0f};
-static float silence2[WAVETABLE_SIZE] = {0.0f};
+static float silence[WAVETABLE_SIZE];
+static float silence2[WAVETABLE_SIZE]; // = {0.0f};
 
 wavetable_oscillator_data *init_oscillators()
 {
@@ -282,6 +284,7 @@ wavetable_oscillator_data *init_oscillators()
 	for (int n = 0; n < WAVETABLE_SIZE; n++)
 	{
 		sinewave[n] = sinf(2.0 * PIF * ((float)n) / (float)WAVETABLE_SIZE);
+		silence[n] = 0.0f;
 	}
 
 	for (int n = 0; n < WAVETABLE_SIZE / 4; n++)

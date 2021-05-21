@@ -1,7 +1,3 @@
-#include <assert.h>
-#include <stdio.h>
-
-#include "wavetable_oscillator.c"
 typedef struct wav_header
 {
 	// RIFF Header
@@ -24,32 +20,3 @@ typedef struct wav_header
 	int data_bytes;			 // Number of bytes in data. Number of samples * num_channels * sample byte size
 											 // uint8_t bytes[]; // Remainder of wave file is bytes
 } wav_header;
-int main()
-{
-	void *ref = init_oscillators();
-	for (int i = 0; i < 17; i++)
-	{
-		oscillator[i].wave000 = sinewave;
-		oscillator[i].wave001 = squarewave;
-	}
-	FILE *w = popen("ffplay  -ac 2 -ar 48000 -f f32le -i pipe:0", "w");
-
-	for (int midi = 60; midi < 70; midi++)
-	{
-		set_midi(0, midi);
-		oscillator[0].fadeDim1Increment = 1.0f / 48000.0f;
-		oscillator[0].fadeDim1 = 0.0f;
-
-		for (int i = 0; i < 48000; i += SAMPLE_BLOCKSIZE)
-		{
-			wavetable_1dimensional_oscillator(&oscillator[0]);
-			//	fwrite(oscillator[0].output_ptr, 4, 128, f);
-			fwrite(oscillator[0].output_ptr, 4, SAMPLE_BLOCKSIZE, w);
-			printf("\n%f", oscillator[0].fadeDim1);
-		}
-		break;
-		//	break;
-	}
-	//	pclose(f);
-	pclose(w);
-}

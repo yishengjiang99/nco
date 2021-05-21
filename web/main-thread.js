@@ -3,12 +3,7 @@ const BIT32_NORMALIZATION = 4294967296.0;
 const main = document.querySelector("main");
 const { stderr, stdout, infoPanel, errPanel } = logdiv({ container: main });
 const statediv = mkdiv("pre", {}, "statediv");
-main.append(
-  mkdiv("div", { style: "display:grid; grid-template-columns: 1fr 1fr;" }, [
-    infoPanel,
-    statediv,
-  ])
-);
+
 stdout("page load");
 let ctx, awn, envelope;
 let state = {
@@ -36,14 +31,27 @@ const sliders = Object.keys(state).map((attr) => {
   ]);
 });
 main.append(
-  mkdiv("div", { class: "panel" }, [
-    ...sliders,
-    mkdiv("div", { id: "keyboard" }),
-  ])
+  mkdiv(
+    "div",
+    {
+      style:
+        "display:grid; grid-template-columns: 1fr 1fr;grid-template-rows:1fr 1fr 1fr;",
+    },
+    [
+      infoPanel,
+      statediv,
+      mkdiv(
+        "div",
+        { id: "midiListen" },
+        `  <button class='button primary' id='midc'>connect midi(usb)</button>`
+      ),
+      mkdiv("div", { id: "panel" }, sliders),
+    ]
+  )
 );
 var keyboard = new QwertyHancock({
   id: "keyboard",
-  width: 500,
+  width: 999,
   height: 150,
   octaves: 2,
   startNote: "A3",
@@ -61,7 +69,8 @@ async function init_audio_ctx(stdout, stderr) {
 
     await ctx.audioWorklet.addModule("web/audio-thread.js");
     awn = new AudioWorkletNode(ctx, "rendproc", {
-      outputChannelCount: [1],
+      numberOfInputs: 16,
+      outputChannelCount: [2],
     });
     awn.onprocessorerror = (e) => {
       console.trace(e);
@@ -100,14 +109,14 @@ init_audio_ctx(stdout, stderr).then(async ([_ctx, awn]) => {
     if (keys.indexOf(e.key) > -1) {
       stdout("key down " + e.key);
 
-      noteOn(48 + keys.indexOf(e.key));
+      noteOn(48 + keys.indexOf(e.key), 0, 89);
       window.addEventListener(
         "keyup",
         (e) => {
           if (keys.indexOf(e.key) > -1) {
             stdout("key key up " + e.key);
 
-            noteOff(48 + keys.indexOf(e.key));
+            noteOff(48 + keys.indexOf(e.key), 0, 99);
           }
         },
         { once: true }
@@ -115,7 +124,7 @@ init_audio_ctx(stdout, stderr).then(async ([_ctx, awn]) => {
     }
   };
 });
-function noteOn(midi) {
+function noteOn(midi, channel, velocity) {
   const { onSetFade, fadeVelocity, attack, decay, release, sustain } = state;
   ctx.resume();
   awn.port.postMessage({
@@ -151,50 +160,66 @@ const keys = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"];
 stdout(`use keys ${keys.join(",")} to request midi tones 48 + index of key `);
 keyboard.keyDown = function (note, Hertz) {
   // Your code here
-  noteOn((Math.log(Hertz / 440.0) / Math.log(2)) * 12 + 69);
+  noteOn((Math.log(Hertz / 440.0) / Math.log(2)) * 12 + 69, 0, 77);
 };
 
 keyboard.keyUp = function (note, Hertz) {
   // Your code here
-  noteOff((Math.log(Hertz / 440.0) / Math.log(2)) * 12 + 69);
+  noteOff((Math.log(Hertz / 440.0) / Math.log(2)) * 12 + 69, 0, 88);
 };
+let midiListenID, midiInputs, midiInputIDs;
 function bindMidiAccess(proc) {
   navigator.requestMIDIAccess().then(
     (midiAccess) => {
       stdout("midi access grant");
-      const midiInputs = Array.from(midiAccess.inputs.values());
-      const midiOutputs = Array.from(midiAccess.outputs.values());
-      for (const output of midiOutputs) {
-        //  midiWritePort = output;
-        break;
-      }
+      midiInputs = Array.from(midiAccess.inputs.values());
+      midiInputIDs = midiInputs.map((ip) => ip.id);
+
       for (const input of midiInputs) {
+        midiListenID = input.id;
         // @ts-ignore
         input.onmidimessage = ({ data, timestamp }) => {
-          procPort.postMessage({ midi: data });
+          awn.port.postMessage({ midi: data });
+          const channel = data[0] & 0x7f;
+          const cmd = data[0] & 0x80;
+          const note = data[1];
+          const velocity = data.length > 2 ? data[2] : 0;
+          switch (cmd) {
+            case 0x90:
+              noteOn(note, channel, velocity);
+              break;
+            case 0x80:
+              if (velocity == 0) {
+                noteOff(note, channel, 0);
+              } else {
+                noteOn(note, channel, velocity);
+              }
+              break;
+
+            case 0x1a:
+              break;
+          }
           console.log(data);
         };
       }
-      const midiInputsRadio = midiInputs.map((inputs) => {
-        return mkdiv("div", {}, [
-          mkdiv("input", {
-            type: "radio",
-            value: output.id,
-            name: "outputselect",
-            checked: output.id == output.id ? "true" : "false",
-          }),
-          mkdiv("span", { role: "label", for: "o_" + output.id }, output.name),
-        ]);
-      });
-      outputlist.append(mkdiv("form", {}, midioutputradio));
-      inputlist.append(
+      document.querySelector("#midiListen").innerHTML = "";
+      document.querySelector("#midiListen").append(
         mkdiv(
-          "form",
+          "div",
           {},
-          midiOutputs.map((o) => {
+          midiInputs.map((input) => {
             return mkdiv("div", {}, [
-              mkdiv("input", { type: "checkbox", checked: "checked" }),
-              mkdiv("span", { role: "label", for: "o_" + o.id }, o.name),
+              mkdiv("input", {
+                type: "radio",
+                value: input.id,
+                name: "outputselect",
+                checked: input.id == midiListenID ? "true" : "false",
+              }),
+              mkdiv(
+                "span",
+                { role: "label", for: "input" + input.id },
+                input.name
+              ),
             ]);
           })
         )
@@ -205,3 +230,4 @@ function bindMidiAccess(proc) {
     }
   );
 }
+document.querySelector("button#midc").onclick = bindMidiAccess;
