@@ -1,0 +1,40 @@
+{
+  "_from": "draw-canvas-60fps@^1.0.0",
+  "_id": "draw-canvas-60fps@1.0.0",
+  "_inBundle": false,
+  "_integrity": "sha512-T9OJCRBh+C8TVJdwAAGX5tqmoqqwbIESuLM814J1I+JYnq3pnrWiq8Ma7uatFPqYYHXAXGeKoWiwj8N6o4+x2A==",
+  "_location": "/draw-canvas-60fps",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "draw-canvas-60fps@^1.0.0",
+    "name": "draw-canvas-60fps",
+    "escapedName": "draw-canvas-60fps",
+    "rawSpec": "^1.0.0",
+    "saveSpec": null,
+    "fetchSpec": "^1.0.0"
+  },
+  "_requiredBy": [
+    "/parse-sf2"
+  ],
+  "_resolved": "https://registry.npmjs.org/draw-canvas-60fps/-/draw-canvas-60fps-1.0.0.tgz",
+  "_shasum": "b9f74775faec5f8c577e5bebeda329d02ff450b4",
+  "_spec": "draw-canvas-60fps@^1.0.0",
+  "_where": "/Users/yisheng/Documents/GitHub/wasmtutorial/node_modules/parse-sf2",
+  "access": "public",
+  "author": {
+    "name": "Yisheng Jiang"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "draw line of frequentely updating floating numbers on a canvas (performantly) ",
+  "keywords": [],
+  "license": "ISC",
+  "main": "index.js",
+  "name": "draw-canvas-60fps",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "1.0.0"
+}
