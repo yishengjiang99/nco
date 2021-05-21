@@ -1,5 +1,6 @@
 // @ts-ignore
 import { draw, mkdiv } from "./draw-canvas-60fps/es6.js";
+const pre = document.createElement("pre");
 const tbs = [
     "01_Saw",
     "02_Triangle",
@@ -54,24 +55,28 @@ const tbs = [
     "Wurlitzer",
 ];
 async function playt(tablename) {
-    const [before, after] = Array.from(document.querySelectorAll("canvas"));
-    const imgPcm = await (await fetch("../wvtable_pcm/" + tablename + "_img.pcm")).arrayBuffer();
-    const readPcm = await (await fetch("../wvtable_pcm/" + tablename + "_real.pcm")).arrayBuffer();
     let ctx = new OfflineAudioContext({
         numberOfChannels: 1,
         length: 4096,
-        sampleRate: 48000,
+        sampleRate: 4096,
     });
+    const [before, after] = Array.from(document.querySelectorAll("canvas"));
+    const imgPcm = await (await fetch("../wvtable_pcm/" + tablename + "_img.pcm")).arrayBuffer();
+    const readPcm = await (await fetch("../wvtable_pcm/" + tablename + "_real.pcm")).arrayBuffer();
     const chart = draw(function () {
         return new Float32Array(imgPcm);
     }, 4096, before);
     chart.start();
-    chart.stop();
+    pre.innerHTML = new Float32Array(readPcm).join("\n");
     let osc;
     try {
         osc = new OscillatorNode(ctx, {
             type: "custom",
-            periodicWave: ctx.createPeriodicWave(new Float32Array(readPcm), new Float32Array(imgPcm)),
+            periodicWave: new PeriodicWave(ctx, {
+                real: new Float32Array(readPcm).slice(0, 10),
+                imag: new Float32Array(imgPcm).slice(0, 10),
+            }),
+            frequency: 1,
         });
     }
     catch (e) {
@@ -86,16 +91,13 @@ async function playt(tablename) {
         const float = ab.getChannelData(0);
         const { start, stop } = draw(function getData() {
             return float;
-        }, 4096, after);
-        start();
-        stop();
+        }, 4096 / 2, after);
     });
-}
-function playtt() {
-    alert("s");
 }
 document.body.append(mkdiv("div", {}, tbs.map((t) => mkdiv("button", {
     onclick: () => {
         playt(t);
     },
-}, "convert"))));
+}, t))));
+console.log(pre);
+document.body.append(pre);

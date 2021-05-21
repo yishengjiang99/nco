@@ -1,5 +1,6 @@
 // @ts-ignore
 import { draw, mkdiv } from "./draw-canvas-60fps/es6.js";
+const pre = document.createElement("pre");
 
 const tbs = [
   "01_Saw",
@@ -55,6 +56,12 @@ const tbs = [
   "Wurlitzer",
 ];
 async function playt(tablename: string) {
+  let ctx = new OfflineAudioContext({
+    numberOfChannels: 1,
+    length: 4096,
+    sampleRate: 4096,
+  });
+
   const [before, after] = Array.from(document.querySelectorAll("canvas"));
   const imgPcm = await (
     await fetch("../wvtable_pcm/" + tablename + "_img.pcm")
@@ -62,11 +69,7 @@ async function playt(tablename: string) {
   const readPcm = await (
     await fetch("../wvtable_pcm/" + tablename + "_real.pcm")
   ).arrayBuffer();
-  let ctx = new OfflineAudioContext({
-    numberOfChannels: 1,
-    length: 4096,
-    sampleRate: 48000,
-  });
+
   const chart = draw(
     function () {
       return new Float32Array(imgPcm);
@@ -76,15 +79,16 @@ async function playt(tablename: string) {
   );
 
   chart.start();
-  chart.stop();
+  pre.innerHTML = new Float32Array(readPcm).join("\n");
   let osc;
   try {
     osc = new OscillatorNode(ctx, {
       type: "custom",
-      periodicWave: ctx.createPeriodicWave(
-        new Float32Array(readPcm),
-        new Float32Array(imgPcm)
-      ),
+      periodicWave: new PeriodicWave(ctx, {
+        real: new Float32Array(readPcm).slice(0, 10),
+        imag: new Float32Array(imgPcm).slice(0, 10),
+      }),
+      frequency: 1,
     });
   } catch (e) {
     document.querySelector("#error")!.innerHTML = e.toString();
@@ -100,15 +104,10 @@ async function playt(tablename: string) {
       function getData() {
         return float;
       },
-      4096,
+      4096 / 2,
       after
     );
-    start();
-    stop();
   });
-}
-function playtt() {
-  alert("s");
 }
 
 document.body.append(
@@ -123,8 +122,10 @@ document.body.append(
             playt(t);
           },
         },
-        "convert"
+        t
       )
     )
   )
 );
+console.log(pre);
+document.body.append(pre);

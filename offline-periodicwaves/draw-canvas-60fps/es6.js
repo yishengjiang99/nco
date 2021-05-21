@@ -13,15 +13,11 @@ export function mkdiv(type, attr = {}, children = "") {
   });
   return div;
 }
-//
-var zoomScale = 1,
-  zoomXscale = 1;
 const slider = mkdiv(
   "input",
   { type: "range", value: 1, max: 10, min: -10, step: 0.2 },
   []
 );
-slider.oninput = (e) => (zoomXscale = Math.pow(2, e.target.value));
 
 export const draw = function (getData, lenght, canvas = null) {
   var canvas =
@@ -31,8 +27,12 @@ export const draw = function (getData, lenght, canvas = null) {
   if (!canvas.parentElement) {
     document.body.append(canvas);
   }
-  const height = canvas.parentElement.clientHeight;
-  const width = canvas.parentElement.clientWidth;
+  var zoomScale = 1,
+    zoomXscale = 1;
+  const height =
+    canvas.getAttribute("height") || canvas.parentElement.clientHeight;
+  const width =
+    canvas.getAttribute("width") || canvas.parentElement.clientWidth;
   const canvasCtx = canvas.getContext("2d");
   canvas.setAttribute("width", width + "");
   canvas.setAttribute("height", height + "");
@@ -81,6 +81,12 @@ export const draw = function (getData, lenght, canvas = null) {
   canvas.onkeydown = (e) => {
     if (e.code == "+") zoomScale += 0.5;
   };
+  function zoom(e) {
+    zoomXscale = Math.pow(2, e.target.value);
+    draw(true);
+  }
+  slider.removeEventListener("input", zoom);
+  slider.addEventListener("input", zoom);
   draw(true);
   return {
     canvas: canvas,
