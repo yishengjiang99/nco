@@ -1,44 +1,22 @@
-#include <assert.h>
 #include <stdio.h>
 #include <mm_malloc.h>
 #include <string.h>
 
 #include "wavetable_oscillator.c"
-typedef struct wav_header
+static inline void loadpcm(float *arr, const char *filename)
 {
-	// RIFF Header
-	char riff_header[4]; // Contains "RIFF"
-	int wav_size;				 // Size of the wav portion of the file, which follows the first 8 bytes. File size - 8
-	char wave_header[4]; // Contains "WAVE"
+	FILE *fd = fopen(filename, "rb");
+	fread(arr, 4, WAVETABLE_SIZE, fd);
+	fclose(fd);
+}
 
-	// Format Header
-	char fmt_header[4]; // Contains "fmt " (includes trailing space)
-	int fmt_chunk_size; // Should be 16 for PCM
-	short audio_format; // Should be 1 for PCM. 3 for IEEE Float
-	short num_channels;
-	int sample_rate;
-	int byte_rate;					// Number of bytes per second. sample_rate * num_channels * Bytes Per Sample
-	short sample_alignment; // num_channels * Bytes Per Sample
-	short bit_depth;				// Number of bits per sample
-
-	// Data
-	char data_header[4]; // Contains "data"
-	int data_bytes;			 // Number of bytes in data. Number of samples * num_channels * sample byte size
-											 // uint8_t bytes[]; // Remainder of wave file is bytes
-} wav_header;
 int main()
 {
 	void *ref = init_oscillators();
 	FILE *fd;
-	float *piano = (float *)malloc(sizeof(float) * WAVETABLE_SIZE);
-	fd = fopen("wvtable_pcm/Piano_img.pcm", "rb");
-	fread(piano, sizeof(float), WAVETABLE_SIZE, fd);
-	fclose(fd);
+	float *sample;
 
-	fd = fopen("wvtable_pcm/02_Triangle_real.pcm", "rb");
-	fread(oscillator[0].wave001, sizeof(float), WAVETABLE_SIZE, fd);
-	fclose(fd);
-	oscillator[0].wave000 = piano;
+	loadpcm(oscillator[0].wave000, "Piano_4096.pcm");
 	oscillator[0].wave001 = &(squarewave[0]);
 	oscillator[0].wave010 = &(sinewave[0]);
 	oscillator[0].wave011 = &(silence2[0]);

@@ -1,5 +1,7 @@
 import { stdout, stderr, statediv, state, piano, midiBtn } from "./main.js";
 import { bindMidiAccess } from "./midi-connect.js";
+import { loadPeriodicForms } from "./periodic-waveform.js";
+
 stdout("page load");
 let ctx: AudioContext;
 let awn: AudioWorkletNode;
@@ -36,6 +38,7 @@ async function init_audio_ctx() {
       envelope = new GainNode(ctx, { gain: 0 });
     }
     awn.connect(envelope).connect(ctx.destination);
+    stdout("loading engine ready");
   } catch (e) {
     stderr(e.message);
     throw e;
@@ -58,15 +61,15 @@ function noteOn(midi: number, channel: number, velocity: number) {
   awn.port.postMessage({
     setFadeDelta: {
       channel: channel,
-      value: (-1 * fadeVelocity) / ctx.sampleRate / fadeVelocity,
+      value: (-1 * fadeVelocity) / ctx.sampleRate,
     },
   });
   envelope.gain.linearRampToValueAtTime(1, ctx.currentTime + attack);
-  envelope.gain.linearRampToValueAtTime(0.4, ctx.currentTime + decay);
+  envelope.gain.exponentialRampToValueAtTime(sustain, ctx.currentTime + decay);
 }
 function noteOff(midi: number, channel: number = 0) {
   envelope.gain.cancelAndHoldAtTime(ctx.currentTime);
-  envelope.gain.linearRampToValueAtTime(0, state.release);
+  envelope.gain.exponentialRampToValueAtTime(0.00001, state.release[0]);
   awn.port.postMessage({
     setFadeDelta: {
       channel: channel,
@@ -111,4 +114,12 @@ piano.addEventListener("noteOn", (e: CustomEvent) =>
 piano.addEventListener("noteOff", (e: CustomEvent) =>
   noteOff(e.detail.note, 0)
 );
-midiBtn.onclick = () => bindMidiAccess(awn.port, stdout, stderr);
+midiBtn.onclick = () =>
+  bindMidiAccess(awn.port, stdout, stderr).then(
+    (midiInputs: any) =>
+      (midiBtn.parentElement!.innerHTML = `listening for signals from ${Array.from(
+        midiInputs
+      )
+        .map((input: any) => input.name)
+        .join("<br>")}`)
+  );

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <math.h>
+#include <stdlib.h>
 #define NUM_OSCILLATORS 16
 #define SAMPLE_BLOCKSIZE 128
 
@@ -10,7 +11,7 @@
 
 #define PIF 3.1415926539f
 #define BIT32_NORMALIZATION 4294967296.0f
-#define SAMPLE_RATE 48000
+#define SAMPLE_RATE 48000.0f
 //
 //  This typedef in wavetable_oscillator.h
 //
@@ -273,6 +274,10 @@ static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
 static float silence[WAVETABLE_SIZE];
 static float silence2[WAVETABLE_SIZE]; // = {0.0f};
 
+float *alloc_table()
+{
+	return (float *)malloc(WAVETABLE_SIZE * sizeof(float));
+}
 wavetable_oscillator_data *init_oscillators()
 {
 
@@ -317,8 +322,8 @@ wavetable_oscillator_data *init_oscillators()
 
 		oscillator[i].wave000 = &(sinewave[0]);
 		oscillator[i].wave001 = &(squarewave[0]);
-		oscillator[i].wave010 = &(silence[0]);
-		oscillator[i].wave011 = &(silence2[0]);
+		oscillator[i].wave010 = &(sinewave[0]);
+		oscillator[i].wave011 = &(sinewave[0]);
 	}
 	return &oscillator[0];
 }
@@ -361,12 +366,4 @@ void handle_midi_channel_msg(uint8_t bytes[3])
 	default:
 		break; //TODO: break;
 	}
-}
-void set_fade_1(int channel, float fade1)
-{
-	oscillator[channel].fadeDim1 = fade1;
-}
-void set_fade_1_delta(int channel, float fade_delta)
-{
-	oscillator[channel].fadeDim1 = fade_delta;
 }

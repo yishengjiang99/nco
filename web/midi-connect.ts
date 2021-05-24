@@ -16,7 +16,7 @@ export function bindMidiAccess(
         };
       }
       midiAccess.onChange = () => stderr("midi access evoked");
-      return { midiInputs };
+      return midiInputs;
     },
     () => {
       stderr("access not granted");

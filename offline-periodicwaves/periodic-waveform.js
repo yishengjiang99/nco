@@ -1,6 +1,9 @@
 // @ts-ignore
 import { draw, mkdiv } from "./draw-canvas-60fps/es6.js";
 const pre = document.createElement("pre");
+const ctx = new AudioContext();
+let awn;
+const addModeWait = ctx.audioWorklet.addModule("../web/audio-thread.js");
 const tbs = [
     "01_Saw",
     "02_Triangle",
@@ -87,6 +90,7 @@ async function playt(tablename) {
     osc.connect(ctx.destination);
     osc.start();
     osc.stop(1.1);
+    await addModeWait;
     return ctx.startRendering().then((ab) => {
         const float = ab.getChannelData(0);
         const { start, stop } = draw(function getData() {

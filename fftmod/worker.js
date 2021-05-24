@@ -4,7 +4,6 @@ const nchannels = 16;
 const channel_buffer = 128;
 const fftsize = 4096;
 function init(wasmModule) {
-  debugger;
   const ringsize = fftsize * 4 * 2;
   const dataPtr = wasmModule._malloc(ringsize);
   const statePtr = wasmModule._malloc(2 * Uint32Array.BYTES_PER_ELEMENT);

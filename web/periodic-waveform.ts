@@ -1,5 +1,7 @@
 type SampleTable = Float32Array;
-export async function renderTable(tablename: string): Promise<Float32Array> {
+export async function loadPeriodicForms(
+  tablename: string
+): Promise<Float32Array> {
   let ctx = new OfflineAudioContext({
     numberOfChannels: 1,
     length: 4096,
