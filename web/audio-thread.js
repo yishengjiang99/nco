@@ -63,7 +63,7 @@ function onMSG(e) {
   const { data, target } = e;
   e.target.postMessage(e.data);
   const {
-    setMidi,
+    setMidiNote,
     setFade,
     setFadeDelta,
     setPhaseIncrement,
@@ -73,8 +73,8 @@ function onMSG(e) {
   } = e.data;
   const chref = (ch) => osc_ref + osc_struct_size * ch;
 
-  if (setMidi) {
-    const { channel, value } = setMidi;
+  if (setMidiNote) {
+    const { channel, value } = setMidiNote;
     Module.set_midi(channel, value);
     awpport.postMessage({
       osc_table: osc_info(chref(channel)),
