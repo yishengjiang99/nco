@@ -274,9 +274,9 @@ static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
 static float silence[WAVETABLE_SIZE];
 static float silence2[WAVETABLE_SIZE]; // = {0.0f};
 
-float *alloc_table()
+float *alloc_table(int n)
 {
-	return (float *)malloc(WAVETABLE_SIZE * sizeof(float));
+	return (float *)malloc(WAVETABLE_SIZE * sizeof(float) * n);
 }
 wavetable_oscillator_data *init_oscillators()
 {
