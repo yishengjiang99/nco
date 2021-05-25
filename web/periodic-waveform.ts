@@ -68,12 +68,12 @@ export async function loadPeriodicForms(
         await (
           await fetch("wvtable_pcm/" + tablename + "_img.pcm")
         ).arrayBuffer()
-      ).slice(0, 10),
+      ),
       real: new Float32Array(
         await (
           await fetch("wvtable_pcm/" + tablename + "_real.pcm")
         ).arrayBuffer()
-      ).slice(0, 10),
+      ),
     }),
     frequency: 1,
   });

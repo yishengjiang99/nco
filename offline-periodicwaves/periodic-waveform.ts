@@ -119,7 +119,7 @@ document.body.append(
   mkdiv(
     "div",
     {},
-    tbs.map((t) =>
+    tbs.map((t) =>ia
       mkdiv(
         "button",
         {

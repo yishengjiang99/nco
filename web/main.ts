@@ -1,5 +1,8 @@
-import { logdiv, mkdiv, wrapList } from "./mkdiv.js";
+import { logdiv, mkdiv, wrapDiv, wrapList } from "./mkdiv.js";
+import { loadPeriodicForms, tbs } from "./periodic-waveform.js";
+
 import "./keyboard.js";
+
 const main = document.querySelector("main")!;
 export const { stderr, stdout, infoPanel } = logdiv();
 export const statediv = mkdiv("pre", {}, "");
@@ -13,6 +16,10 @@ export var state = {
   vibratoLFO: [5, 0, 60],
 };
 export const midiBtn = mkdiv("button", {}, "Connect To Midi");
+document
+  .querySelector("nav")!
+  .appendChild(mkdiv("div", { id: "midiListen" }, midiBtn));
+
 const sliders = Object.keys(state).map((attr) => {
   //@ts-ignore
   const [value, min, max] = state[attr];
@@ -34,18 +41,30 @@ const sliders = Object.keys(state).map((attr) => {
     mkdiv("label", { id: `${attr}val` }, "" + state[attr][0]),
   ]);
 });
-export const piano = mkdiv("piano-keyboard");
-main.append(
+
+export const [controlPanel, startBtn, piano, canvasA, canvasB] = [
+  mkdiv("div", { id: "panel" }, sliders),
+  mkdiv("button", { class: "btn btn-primary" }, "start"),
+  mkdiv("piano-keyboard", {}, []),
+  mkdiv("canvas", { id: "canvasA" }),
+  mkdiv("canvas", { id: "canvasB" }),
+];
+
+document.body.append(
   mkdiv(
-    "div",
+    "main",
     {
-      style: `display:grid; grid-template-columns: 1fr 1fr`,
+      style: `display:grid;width:100vw; \
+      grid-template-columns:1fr 1fr 1fr;  grid-template-rows:1fr 1fr 1fr;`,
     },
     [
+      wrapDiv(canvasA, "div", { style: "width:25vw;height:25vw" }),
+      wrapDiv(canvasB, "div", { style: "width:25vw;height:25vw" }),
+
       infoPanel,
       statediv,
-      mkdiv("div", { id: "midiListen" }, midiBtn),
-      mkdiv("div", { id: "panel" }, sliders),
+      controlPanel,
+      startBtn,
       piano,
     ]
   )

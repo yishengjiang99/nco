@@ -1,12 +1,25 @@
-import { write } from "node:fs";
-import { stdout, stderr, statediv, state, piano, midiBtn } from "./main.js";
+import {
+  stdout,
+  stderr,
+  statediv,
+  state,
+  piano,
+  midiBtn,
+  controlPanel,
+  canvasA,
+} from "./main.js";
 import { bindMidiAccess } from "./midi-connect.js";
+import { mkdiv, draw } from "./mkdiv.js";
 import { loadPeriodicForms, tbs } from "./periodic-waveform.js";
+// @ts-ignore
+//@ts-ignore
+import io_samplers from "./charts.js";
 
 stdout("page load");
 let ctx: AudioContext;
 let awn: AudioWorkletNode;
 let envelope: any;
+let analy: AnalyserNode;
 
 async function init_audio_ctx() {
   try {
@@ -38,8 +51,6 @@ async function init_audio_ctx() {
     if (!envelope) {
       envelope = new GainNode(ctx, { gain: 0 });
     }
-    awn.connect(envelope).connect(ctx.destination);
-    stdout("loading engine ready");
   } catch (e) {
     stderr(e.message);
     throw e;
@@ -70,22 +81,26 @@ async function noteOn(midi: number, channel: number, velocity: number) {
 function noteOff(midi: number, channel: number = 0) {
   envelope.gain.cancelAndHoldAtTime(ctx.currentTime);
   envelope.gain.exponentialRampToValueAtTime(0.00001, state.release[0]);
-  awn.port.postMessage({
-    setFadeDelta: {
-      channel: channel,
-      value: 0,
-    },
-    setPhaseIncrement: {
-      channel: channel,
-      value: 0,
-    },
-  });
 }
 async function gotCtx() {
+  const { inputAnalyzer, outputAnalyzer, run_samples, disconnect } =
+    io_samplers(ctx, 1024, console.log);
+  analy = new AnalyserNode(ctx, { fftSize: 256 });
+  awn
+    .connect(inputAnalyzer)
+    .connect(envelope)
+    .connect(outputAnalyzer)
+    .connect(ctx.destination);
+  stdout("loading engine ready");
+
   const keys = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"];
   stdout(`use keys ${keys.join(",")} to request midi tones 48 + index of key `);
   window.onkeydown = async (e: KeyboardEvent) => {
-    if (ctx.state != "running") await ctx.resume().then(() => prockey(e));
+    if (ctx.state != "running")
+      await ctx.resume().then(() => {
+        prockey(e);
+        run_samples();
+      });
     else prockey(e);
   };
   function prockey(e: KeyboardEvent) {
@@ -107,6 +122,29 @@ async function gotCtx() {
       );
     }
   }
+  loadtbls();
+  run_samples();
+}
+init_audio_ctx().then(gotCtx);
+// @ts-ignore
+piano.addEventListener("noteOn", (e: CustomEvent) =>
+  noteOn(e.detail.note, 0, 56)
+);
+// @ts-ignore
+
+piano.addEventListener("noteOff", (e: CustomEvent) =>
+  noteOff(e.detail.note, 0)
+);
+midiBtn.onclick = () =>
+  bindMidiAccess(awn.port, noteOn, noteOff, stdout, stderr).then(
+    (midiInputs: any) =>
+      (midiBtn.parentElement!.innerHTML = `listening for signals from ${Array.from(
+        midiInputs
+      )
+        .map((input: any) => input.name)
+        .join("<br>")}`)
+  );
+function loadtbls() {
   const http_to_audio_thread_pipe = new TransformStream();
   // @ts-ignore
   awn.port.postMessage({ readable: http_to_audio_thread_pipe.readable }, [
@@ -127,23 +165,28 @@ async function gotCtx() {
       stdout("loaded " + name);
     }
   })();
+  [0, 1].map((tbIndex) => {
+    controlPanel.append(
+      mkdiv("div", {}, [
+        mkdiv("label", { for: "select" + tbIndex }, "wf" + tbIndex.toString(2)),
+        mkdiv(
+          "select",
+          {
+            "aria-label": "wf" + tbIndex.toString(2),
+            // @ts-ignore
+            onchange: (e) => {
+              awn.port.postMessage({
+                setTable: {
+                  channel: 0,
+                  tbIndex,
+                  formIndex: e.target.value,
+                },
+              });
+            },
+          },
+          tbs.map((tname, idx) => mkdiv("option", { value: idx }, tname))
+        ),
+      ])
+    );
+  });
 }
-init_audio_ctx().then(gotCtx);
-// @ts-ignore
-piano.addEventListener("noteOn", (e: CustomEvent) =>
-  noteOn(e.detail.note, 0, 56)
-);
-// @ts-ignore
-
-piano.addEventListener("noteOff", (e: CustomEvent) =>
-  noteOff(e.detail.note, 0)
-);
-midiBtn.onclick = () =>
-  bindMidiAccess(awn.port, stdout, stderr).then(
-    (midiInputs: any) =>
-      (midiBtn.parentElement!.innerHTML = `listening for signals from ${Array.from(
-        midiInputs
-      )
-        .map((input: any) => input.name)
-        .join("<br>")}`)
-  );
