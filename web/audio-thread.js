@@ -7,6 +7,7 @@ console.assert(osc_struct_size > 1);
 const soundCards = [];
 const phaseViews = [];
 const faderViews = [];
+const waveTableRegistry = [];
 for (let i = 0; i < 16; i++) {
   const ptr = new Uint32Array(
     Module.mem.buffer,
@@ -61,8 +62,8 @@ function osc_info(ref) {
 }
 function onMSG(e) {
   const { data, target } = e;
-  e.target.postMessage(e.data);
   const {
+    readable,
     setMidiNote,
     setFade,
     setFadeDelta,
@@ -71,39 +72,46 @@ function onMSG(e) {
     keyOff,
     info,
   } = e.data;
+  if (readable) {
+    const reader = readable.getReader();
+    reader.read().then(function process({ value, done }) {
+      if (done || value.length == 0) return;
+      const register = Module.sbrk(value.byteLength);
+      console.log(register, value.byteLength);
+      const arrStart = register >> 2;
+      for (let i = 0; i < value.length; i++) {
+        Module.HEAPF32[arrStart + i] = value[i];
+      }
+
+      // new Uint8Array(Module.mem.buffer).set(register, value.slice(0, 4096 * 8));
+      reader.read().then(process);
+    });
+    return;
+  }
   const chref = (ch) => osc_ref + osc_struct_size * ch;
 
   if (setMidiNote) {
     const { channel, value } = setMidiNote;
     Module.set_midi(channel, value);
-    awpport.postMessage({
-      osc_table: osc_info(chref(channel)),
-    });
   }
   if (setPhaseIncrement) {
     const { channel, value } = setPhaseIncrement;
     phaseViews[channel].setFloat32(2, value, true);
-    awpport.postMessage({
-      osc_table: osc_info(chref(channel)),
-    });
   }
   if (setFade) {
     const { channel, value } = setFade;
     faderViews[channel].setFloat32(0, value, true);
-    awpport.postMessage({
-      osc_table: osc_info(chref(channel)),
-    });
   }
   if (setFadeDelta) {
     const { channel, value } = setFadeDelta;
     faderViews[channel].setFloat32(4, value, true);
-    awpport.postMessage({
-      osc_table: osc_info(chref(channel)),
-    });
   }
   if (info) {
     awpport.postMessage({ osc_table: osc_ref });
   }
+  awpport.postMessage({
+    osc_table: osc_info(chref(channel)),
+  });
 }
 function spinOscillators(channel) {
   for (let i = 0; i < 16; i++) {

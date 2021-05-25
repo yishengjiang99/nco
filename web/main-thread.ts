@@ -1,6 +1,7 @@
+import { write } from "node:fs";
 import { stdout, stderr, statediv, state, piano, midiBtn } from "./main.js";
 import { bindMidiAccess } from "./midi-connect.js";
-import { loadPeriodicForms } from "./periodic-waveform.js";
+import { loadPeriodicForms, tbs } from "./periodic-waveform.js";
 
 stdout("page load");
 let ctx: AudioContext;
@@ -45,13 +46,12 @@ async function init_audio_ctx() {
   }
 }
 
-function noteOn(midi: number, channel: number, velocity: number) {
+async function noteOn(midi: number, channel: number, velocity: number) {
   let [initialMix, fadeVelocity, attack, decay, release, sustain] = Array.from(
     Object.values(state)
   ).map((v) => v[0]);
 
   //[]
-  if (ctx.state != "running") ctx.resume();
   awn.port.postMessage({
     setMidiNote: { channel: channel, value: midi },
   });
@@ -81,10 +81,14 @@ function noteOff(midi: number, channel: number = 0) {
     },
   });
 }
-function gotCtx() {
+async function gotCtx() {
   const keys = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"];
   stdout(`use keys ${keys.join(",")} to request midi tones 48 + index of key `);
-  window.onkeydown = (e: KeyboardEvent) => {
+  window.onkeydown = async (e: KeyboardEvent) => {
+    if (ctx.state != "running") await ctx.resume().then(() => prockey(e));
+    else prockey(e);
+  };
+  function prockey(e: KeyboardEvent) {
     if (e.repeat) return;
     if (keys.indexOf(e.key) > -1) {
       stdout("key down " + e.key);
@@ -102,7 +106,27 @@ function gotCtx() {
         { once: true }
       );
     }
-  };
+  }
+  const http_to_audio_thread_pipe = new TransformStream();
+  // @ts-ignore
+  awn.port.postMessage({ readable: http_to_audio_thread_pipe.readable }, [
+    http_to_audio_thread_pipe.readable,
+  ]);
+  const writer = http_to_audio_thread_pipe.writable.getWriter();
+  (async () => {
+    for await (const { name, fl32arr } of (async function* dl_queue() {
+      let _tbs = tbs;
+      while (_tbs.length) {
+        const name = _tbs.shift();
+        const fl32arr = await loadPeriodicForms(name!);
+        yield { name, fl32arr };
+      }
+      return;
+    })()) {
+      writer.write(fl32arr);
+      stdout("loaded " + name);
+    }
+  })();
 }
 init_audio_ctx().then(gotCtx);
 // @ts-ignore

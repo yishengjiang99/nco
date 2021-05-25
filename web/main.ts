@@ -30,6 +30,7 @@ const sliders = Object.keys(state).map((attr) => {
         document.querySelector(`#${attr}val`)!.innerHTML = e.target.value + "";
       },
     }),
+    // @ts-ignore
     mkdiv("label", { id: `${attr}val` }, "" + state[attr][0]),
   ]);
 });

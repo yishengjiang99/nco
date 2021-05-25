@@ -34,7 +34,7 @@ export function logdiv(): logdivRet {
   });
   const stderr = (str: string) => (errPanel.innerHTML = str);
   const stdout = (log: string) => {
-    logs.push((performance.now() / 1e6).toFixed(3) + ": " + log);
+    logs.push((performance.now() / 1e3).toFixed(3) + ": " + log);
     if (logs.length > 100) logs.shift();
     infoPanel.innerHTML = logs.join("\n");
     infoPanel.scrollTop = infoPanel.scrollHeight;
