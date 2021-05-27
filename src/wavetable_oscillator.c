@@ -273,11 +273,13 @@ static float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
 static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
 static float silence[WAVETABLE_SIZE];
 static float silence2[WAVETABLE_SIZE]; // = {0.0f};
-
-float *alloc_table(int n)
+static float sample_tables[WAVETABLE_SIZE * 100];
+float *sampleRef = &sample_tables[0];
+void *sampleTableRef(int tableNumber)
 {
-	return (float *)malloc(WAVETABLE_SIZE * sizeof(float) * n);
+	return &(sample_tables[WAVETABLE_SIZE * tableNumber]);
 }
+
 wavetable_oscillator_data *init_oscillators()
 {
 

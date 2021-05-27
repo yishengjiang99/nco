@@ -88,16 +88,12 @@ function onMSG(e) {
   } = e.data;
   if (readable) {
     const reader = readable.getReader();
+    let tbIdx = 0;
     reader.read().then(function process({ value, done }) {
       if (done || value.length == 0) return;
-      const register = Module.sbrk(value.byteLength);
-      console.log(register, value.byteLength);
-      const arrStart = register >> 2;
-      for (let i = 0; i < value.length; i++) {
-        Module.HEAPF32[arrStart + i] = value[i];
-      }
-      waveTableRegistry.push(register);
-      // new Uint8Array(Module.mem.buffer).set(register, value.slice(0, 4096 * 8));
+      const ref = Module.sampleTableRef(tbIdx++);
+      Module.HEAPF32.set(new Float32Array(value), ref);
+
       reader.read().then(process);
     });
     return;
@@ -127,10 +123,16 @@ function onMSG(e) {
     formIndex = parseInt(formIndex); //from 'string'....
     tbViews[channel].setUint32(
       tbIndex * Uint32Array.BYTES_PER_ELEMENT,
-      waveTableRegistry[formIndex],
+      Module.sampleTableRef(formIndex),
       true
     );
-    awpport.postMessage({ osc_table: osc_info(chref(channel)) });
+    const fl = new Float32Array(
+      Module.mem.buffer,
+      tbViews[channel].getUint32(tbIndex, true),
+      4096
+    );
+
+    awpport.postMessage({ fl, osc_table: osc_info(chref(channel)) });
   }
 }
 function spinOscillators(channel) {
