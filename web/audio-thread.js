@@ -126,11 +126,6 @@ function onMSG(e) {
       Module.sampleTableRef(formIndex),
       true
     );
-    const fl = new Float32Array(
-      Module.mem.buffer,
-      tbViews[channel].getUint32(tbIndex, true),
-      4096
-    );
 
     awpport.postMessage({ fl, osc_table: osc_info(chref(channel)) });
   }

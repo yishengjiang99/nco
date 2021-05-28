@@ -18,7 +18,7 @@ int main()
 
 	for (int midi = 33; midi < 70; midi++)
 	{
-		set_midi(0, 44);
+		set_midi(0, midi);
 
 		oscillator[0].fadeDim1Increment = 1.0f / 48000.0f;
 		oscillator[0].fadeDim1 = 0.0f;

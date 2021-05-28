@@ -128,7 +128,7 @@ function noteOn(midi, channel, velocity) {
   const { onSetFade, fadeVelocity, attack, decay, release, sustain } = state;
   ctx.resume();
   awn.port.postMessage({
-    setMidi: { channel: 0, value: midi },
+    setMidiNote: { channel: 0, value: midi },
   });
   awn.port.postMessage({
     setFade: { channel: 0, value: onSetFade },
@@ -145,16 +145,16 @@ function noteOn(midi, channel, velocity) {
 function noteOff(midi) {
   envelope.gain.cancelAndHoldAtTime(ctx.currentTime);
   envelope.gain.linearRampToValueAtTime(0, state.release);
-  awn.port.postMessage({
-    setFadeDelta: {
-      channel: 0,
-      value: 0,
-    },
-    setPhaseIncrement: {
-      channel: 0,
-      value: 0,
-    },
-  });
+  // awn.port.postMessage({
+  //   setFadeDelta: {
+  //     channel: 0,
+  //     value: 0,
+  //   },
+  //   setPhaseIncrement: {
+  //     channel: 0,
+  //     value: 0,
+  //   },
+  // });
 }
 const keys = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"];
 stdout(`use keys ${keys.join(",")} to request midi tones 48 + index of key `);
@@ -181,7 +181,7 @@ function bindMidiAccess(proc) {
         input.onmidimessage = ({ data, timestamp }) => {
           awn.port.postMessage({ midi: data });
           const channel = data[0] & 0x7f;
-          const cmd = data[0] & 0x80;
+s         const cmd = data[0] & 0x80;
           const note = data[1];
           const velocity = data.length > 2 ? data[2] : 0;
           switch (cmd) {
