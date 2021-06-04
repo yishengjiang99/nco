@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "module": "CommonJS",
+    "target": "ES2020",
+    "moduleResolution": "node",
+    "preserveConstEnums": true,
+
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/*.ts"
+  ],
+  "compileOnSave": true
+}

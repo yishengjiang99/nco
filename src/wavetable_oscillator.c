@@ -327,7 +327,7 @@ wavetable_oscillator_data *init_oscillators()
 		oscillator[i].wave010 = &(sinewave[0]);
 		oscillator[i].wave011 = &(sinewave[0]);
 	}
-	return &oscillator[0];
+	return oscillator;
 }
 
 int wavetable_struct_size()
