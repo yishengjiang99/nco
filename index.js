@@ -1,8 +1,8 @@
-import { sfbkstream, PDTA, readAB, mkdiv, logdiv } from "./libs.js";
-import { draw } from "https://unpkg.com/draw-canvas-60fps@1.0.0/index.js";
+import {sfbkstream, PDTA, readAB, mkdiv, logdiv} from "./libs.js";
+import {draw} from "https://unpkg.com/draw-canvas-60fps@1.0.0/index.js";
 async function load_proc_controller(ctx, url, stderr, stdout) {
 	const workletjoin = ctx.audioWorklet.addModule("rendctx.js");
-	const { pdtaBuffer, sdtaStream, nsamples, infos } = await sfbkstream(url);
+	const {pdtaBuffer, sdtaStream, nsamples, infos} = await sfbkstream(url);
 	const pdta = new PDTA(readAB(pdtaBuffer));
 	await workletjoin;
 	const proc = new AudioWorkletNode(ctx, "rend-proc", {
@@ -11,7 +11,7 @@ async function load_proc_controller(ctx, url, stderr, stdout) {
 			pdtaBuffer,
 		},
 	});
-	proc.port.postMessage({ sdtaStream, nSamples: nsamples }, [sdtaStream]);
+	proc.port.postMessage({sdtaStream, nSamples: nsamples}, [sdtaStream]);
 
 	return {
 		proc,
@@ -22,12 +22,12 @@ async function load_proc_controller(ctx, url, stderr, stdout) {
 const ctx = new AudioContext();
 const statediv = document.querySelector("#sfdiv");
 let _ctxView;
-const analy = new AnalyserNode(ctx, { fftSize: 0x1000 });
+const analy = new AnalyserNode(ctx, {fftSize: 0x1000});
 const fftFlts = new Float32Array(0x1000);
-const { stdout, stderr } = logdiv({ containerID: "stdout" });
+const {stdout, stderr} = logdiv({containerID: "stdout"});
 stdout("pgload");
 await ctx.suspend();
-const { proc, pdta } = await load_proc_controller(ctx, "file.sf2", stdout, stderr);
+const {proc, pdta} = await load_proc_controller(ctx, "file.sf2", stdout, stderr);
 const channelInfo = (ch) => new Uint8Array(_ctxView, chstart + ch * ch_size, ch_size);
 function voiceview(vptr) {
 	return ({
@@ -49,11 +49,11 @@ function voiceview(vptr) {
 		decay_rate,
 		release_rate,
 	} = [
-		...new Uint32Array(heap, (vptr += 20), 5),
-		...new Float32Array(heap, (vptr += 16), 4),
-		...new Uint32Array(heap, (vptr += 20), 5),
-		...new Float32Array(heap, (vptr += 20), 5),
-	]);
+			...new Uint32Array(heap, (vptr += 20), 5),
+			...new Float32Array(heap, (vptr += 16), 4),
+			...new Uint32Array(heap, (vptr += 20), 5),
+			...new Float32Array(heap, (vptr += 20), 5),
+		]);
 }
 
 function updateState() {
@@ -64,7 +64,7 @@ function updateState() {
 }
 //@ts-ignore
 proc.port.onmessageerror = stderr;
-proc.port.onmessage = ({ data: { ctxView } }) => {
+proc.port.onmessage = ({data: {ctxView}}) => {
 	if (ctxView) {
 		_ctxView = ctxView;
 		updateState();
@@ -72,7 +72,7 @@ proc.port.onmessage = ({ data: { ctxView } }) => {
 };
 
 proc.connect(analy).connect(ctx.destination);
-const { start, stop } = draw(function getData() {
+const {start, stop} = draw(function getData() {
 	analy.getFloatFrequencyData(fftFlts);
 	return fftFlts;
 }, 0x1000);

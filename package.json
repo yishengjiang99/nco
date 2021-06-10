@@ -7,6 +7,7 @@
     "lib": "lib"
   },
   "dependencies": {
+    "chai": "^4.3.4",
     "comlink": "^4.3.0",
     "draw-canvas-60fps": "^1.0.0",
     "fft": "^0.2.1",
