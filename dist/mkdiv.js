@@ -136,4 +136,3 @@ export const draw = function (getData, length, canvas) {
         },
     };
 };
-//# sourceMappingURL=mkdiv.js.map

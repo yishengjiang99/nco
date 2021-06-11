@@ -2,9 +2,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "sintbl_lut.c"
+#include "stbl.c"
 #define NUM_OSCILLATORS 16
-#define SAMPLE_BLOCKSIZE 4096
+#define SAMPLE_BLOCKSIZE 32
 
 #define MASK_FRACTIONAL_BITS 0x000FFFFF
 #define MASK_WAVEINDEX 0x00000FFFUL

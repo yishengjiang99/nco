@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mocha</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="mocha.css" />
+  </head>
+  <body>
+    <div id="mocha"><canvas></canvas></div>
+    <script src="node_modules/chai/chai.js"></script>
+
+    <script src="mocha.js"></script>
+    <script>
+      mocha.setup("bdd");
+    </script>
+    <script type="module" src="./test/wavetable-oscilator.spec.js"></script>
+    <script type="module" src="./test/periodic-waveform.spec.js"></script>
+    <script type="module" src="./dist/fft.js"></script>
+  </body>
+</html>
