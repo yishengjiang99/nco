@@ -22,9 +22,11 @@ let envelope: any;
 let analy: AnalyserNode;
 
 async function init_audio_ctx() {
-  try {
+  try
+  {
     ctx = new AudioContext({ sampleRate: 48000 });
-    if (!ctx) {
+    if (!ctx)
+    {
       stderr("failed to init audio ctx");
     }
 
@@ -39,19 +41,23 @@ async function init_audio_ctx() {
     };
     awn.port.onmessageerror = (e) => stderr(e.toString());
     awn.port.onmessage = (e) => {
-      if (e.data.osc_table) {
+      if (e.data.osc_table)
+      {
         statediv.innerHTML = Object.keys(e.data.osc_table)
           .map((k) => `${k}:${e.data.osc_table[k]}`)
           .join("\n");
       }
-      if (e.data.setMidi) {
+      if (e.data.setMidi)
+      {
         stdout(JSON.stringify(e.data.setMidi));
       }
     };
-    if (!envelope) {
+    if (!envelope)
+    {
       envelope = new GainNode(ctx, { gain: 0 });
     }
-  } catch (e) {
+  } catch (e)
+  {
     stderr(e.message);
     throw e;
   }
@@ -84,7 +90,7 @@ function noteOff(midi: number, channel: number = 0) {
 }
 async function gotCtx() {
   const { inputAnalyzer, outputAnalyzer, run_samples, disconnect } =
-    io_samplers(ctx, 1024, console.log);
+    io_samplers(ctx, 1024);
   analy = new AnalyserNode(ctx, { fftSize: 256 });
   awn
     .connect(inputAnalyzer)
@@ -105,14 +111,16 @@ async function gotCtx() {
   };
   function prockey(e: KeyboardEvent) {
     if (e.repeat) return;
-    if (keys.indexOf(e.key) > -1) {
+    if (keys.indexOf(e.key) > -1)
+    {
       stdout("key down " + e.key);
 
       noteOn(48 + keys.indexOf(e.key), 0, 89);
       window.addEventListener(
         "keyup",
         (e) => {
-          if (keys.indexOf(e.key) > -1) {
+          if (keys.indexOf(e.key) > -1)
+          {
             stdout("key key up " + e.key);
 
             noteOff(48 + keys.indexOf(e.key), 0);
@@ -138,11 +146,11 @@ piano.addEventListener("noteOff", (e: CustomEvent) =>
 midiBtn.onclick = () =>
   bindMidiAccess(awn.port, noteOn, noteOff, stdout, stderr).then(
     (midiInputs: any) =>
-      (midiBtn.parentElement!.innerHTML = `listening for signals from ${Array.from(
-        midiInputs
-      )
-        .map((input: any) => input.name)
-        .join("<br>")}`)
+    (midiBtn.parentElement!.innerHTML = `listening for signals from ${Array.from(
+      midiInputs
+    )
+      .map((input: any) => input.name)
+      .join("<br>")}`)
   );
 function loadtbls() {
   const http_to_audio_thread_pipe = new TransformStream();
@@ -154,13 +162,15 @@ function loadtbls() {
   (async () => {
     for await (const { name, fl32arr } of (async function* dl_queue() {
       let _tbs = tbs;
-      while (_tbs.length) {
+      while (_tbs.length)
+      {
         const name = _tbs.shift();
         const fl32arr = await loadPeriodicForms(name!);
         yield { name, fl32arr };
       }
       return;
-    })()) {
+    })())
+    {
       writer.write(fl32arr);
       stdout("loaded " + name);
     }

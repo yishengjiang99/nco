@@ -42,30 +42,16 @@ const sliders = Object.keys(state).map((attr) => {
   ]);
 });
 
-export const [controlPanel, startBtn, piano, canvasA, canvasB] = [
+export const [controlPanel, startBtn, piano, canvasA] = [
   mkdiv("div", { id: "panel" }, sliders),
   mkdiv("button", { class: "btn btn-primary" }, "start"),
-  mkdiv("piano-keyboard", {}, []),
-  mkdiv("canvas", { id: "canvasA" }),
-  mkdiv("canvas", { id: "canvasB" }),
+  mkdiv("piano-keyboard")
 ];
 
-document.body.append(
-  mkdiv(
-    "main",
-    {
-      style: `display:grid;width:100vw; \
-      grid-template-columns:1fr 1fr 1fr;  grid-template-rows:1fr 1fr 1fr;`,
-    },
-    [
-      wrapDiv(canvasA, "div", { style: "width:25vw;height:25vw" }),
-      wrapDiv(canvasB, "div", { style: "width:25vw;height:25vw" }),
+main.appendChild(infoPanel); main.appendChild(statediv); main.appendChild(controlPanel); main.appendChild(piano);
 
-      infoPanel,
-      statediv,
-      controlPanel,
-      startBtn,
-      piano,
-    ]
-  )
-);
+
+
+
+/* startBtn,
+*/
