@@ -1,4 +1,4 @@
-import { stdout, stderr, statediv, state, piano, midiBtn, controlPanel, } from "./main.js";
+import { stdout, stderr, statediv, state, piano, midiBtn, controlPanel } from "./main.js";
 import { bindMidiAccess } from "./midi-connect.js";
 import { mkdiv } from "./mkdiv.js";
 import { loadPeriodicForms, tbs } from "./periodic-waveform.js";
@@ -102,7 +102,7 @@ async function gotCtx() {
             }, { once: true });
         }
     }
-    loadtbls(['pages/0_0.dat', 'pages/60_0.dat', 'pages/80_0.dat', 'pages/128_0']);
+    loadtbls();
     run_samples();
 }
 init_audio_ctx().then(gotCtx);
@@ -122,7 +122,7 @@ function loadtbls() {
     const writer = http_to_audio_thread_pipe.writable.getWriter();
     (async () => {
         for await (const { name, fl32arr } of (async function* dl_queue() {
-            let _tbs = tbs;
+            let _tbs = ['pages/0_0.dat', 'pages/60_0.dat', 'pages/80_0.dat', 'pages/128_0'].concat(tbs);
             while (_tbs.length) {
                 const name = _tbs.shift();
                 const fl32arr = await loadPeriodicForms(name);

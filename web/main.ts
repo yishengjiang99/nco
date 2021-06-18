@@ -42,7 +42,7 @@ const sliders = Object.keys(state).map((attr) => {
   ]);
 });
 
-export const [controlPanel, startBtn, piano, canvasA] = [
+export const [controlPanel, startBtn, piano] = [
   mkdiv("div", { id: "panel" }, sliders),
   mkdiv("button", { class: "btn btn-primary" }, "start"),
   mkdiv("piano-keyboard")
