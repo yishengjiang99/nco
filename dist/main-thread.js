@@ -5,6 +5,7 @@ import { loadPeriodicForms, tbs } from "./periodic-waveform.js";
 // @ts-ignore
 //@ts-ignore
 import io_samplers from "./charts.js";
+new Worker("./wavetable-oscillator.js", { type: "module" });
 stdout("page load");
 let ctx;
 let awn;

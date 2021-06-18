@@ -14,6 +14,7 @@ import { loadPeriodicForms, tbs } from "./periodic-waveform.js";
 // @ts-ignore
 //@ts-ignore
 import io_samplers from "./charts.js";
+new Worker("./wavetable-oscillator.js", { type: "module" });
 
 stdout("page load");
 let ctx: AudioContext;
@@ -130,7 +131,7 @@ async function gotCtx() {
       );
     }
   }
-  loadtbls();
+  loadtbls(['pages/0_0.dat', 'pages/60_0.dat', 'pages/80_0.dat', 'pages/128_0']);
   run_samples();
 }
 init_audio_ctx().then(gotCtx);
@@ -151,52 +152,4 @@ midiBtn.onclick = () =>
     )
       .map((input: any) => input.name)
       .join("<br>")}`)
-  );
-function loadtbls() {
-  const http_to_audio_thread_pipe = new TransformStream();
-  // @ts-ignore
-  awn.port.postMessage({ readable: http_to_audio_thread_pipe.readable }, [
-    http_to_audio_thread_pipe.readable,
-  ]);
-  const writer = http_to_audio_thread_pipe.writable.getWriter();
-  (async () => {
-    for await (const { name, fl32arr } of (async function* dl_queue() {
-      let _tbs = tbs;
-      while (_tbs.length)
-      {
-        const name = _tbs.shift();
-        const fl32arr = await loadPeriodicForms(name!);
-        yield { name, fl32arr };
-      }
-      return;
-    })())
-    {
-      writer.write(fl32arr);
-      stdout("loaded " + name);
-    }
-  })();
-  [0, 1].map((tbIndex) => {
-    controlPanel.append(
-      mkdiv("div", {}, [
-        mkdiv("label", { for: "select" + tbIndex }, "wf" + tbIndex.toString(2)),
-        mkdiv(
-          "select",
-          {
-            "aria-label": "wf" + tbIndex.toString(2),
-            // @ts-ignore
-            onchange: (e) => {
-              awn.port.postMessage({
-                setTable: {
-                  channel: 0,
-                  tbIndex,
-                  formIndex: e.target.value,
-                },
-              });
-            },
-          },
-          tbs.map((tname, idx) => mkdiv("option", { value: idx }, tname))
-        ),
-      ])
-    );
-  });
-}
+  )
