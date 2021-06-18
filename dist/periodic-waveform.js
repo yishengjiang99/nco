@@ -70,3 +70,5 @@ export async function loadPeriodicForms(tablename) {
     osc.stop(1.0);
     return (await ctx.startRendering()).getChannelData(0);
 }
+export async function fft(fl) {
+}

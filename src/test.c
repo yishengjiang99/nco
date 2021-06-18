@@ -2,37 +2,28 @@
 #include <stdio.h>
 
 #include "wavetable_oscillator.c"
-int main()
-{
-	float *piano = sample_tables + 10 * 4096;
+int main() {
+  float *piano = sample_tables + 10 * 4096;
 
-	void *ref = init_oscillators();
-	fread(piano, sizeof(float), 4096, fopen("./pcm/Piano_4096.pcm", "rb"));
+  void *ref = init_oscillators();
 
-	for (int i = 0; i < 17; i++)
-	{
-		oscillator[0].wave000 = piano;
-		oscillator[0].wave001 = silence2;
-	}
-	FILE *w = popen("ffplay  -ac 1 -ar 48000 -f f32le -i pipe:0", "w");
+  FILE *w = popen("ffplay  -ac 1 -ar 48000 -f f32le -i pipe:0", "w");
 
-	for (int midi = 60; midi < 70; midi++)
-	{
-		set_midi(0, midi);
+  for (int midi = 60; midi < 70; midi++) {
+    set_midi(0, midi);
 
-		oscillator[0].fadeDim1Increment = 1.0f / 48000.0f;
-		oscillator[0].fadeDim1 = 0.0f;
+    oscillator[0].fadeDim1Increment = 1.0f / 48000.0f;
+    oscillator[0].fadeDim1 = 0.0f;
 
-		for (int i = 0; i < 48000; i += SAMPLE_BLOCKSIZE)
-		{
-			wavetable_1dimensional_oscillator(oscillator);
+    for (int i = 0; i < 48000; i += SAMPLE_BLOCKSIZE) {
+      wavetable_1dimensional_oscillator(oscillator);
 
-			fwrite(oscillator[0].output_ptr, 4, SAMPLE_BLOCKSIZE, w);
-			printf("\n%f", oscillator[0].fadeDim1);
-		}
+      fwrite(oscillator[0].output_ptr, 4, SAMPLE_BLOCKSIZE, w);
+      printf("\n%f", oscillator[0].fadeDim1);
+    }
 
-		//	break;
-	}
-	//	pclose(f);
-	pclose(w);
+    //	break;
+  }
+  //	pclose(f);
+  pclose(w);
 }

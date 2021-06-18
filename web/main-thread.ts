@@ -14,6 +14,7 @@ import { loadPeriodicForms, tbs } from "./periodic-waveform.js";
 // @ts-ignore
 //@ts-ignore
 import io_samplers from "./charts.js";
+new Worker("./wavetable-oscillator.js", { type: "module" });
 
 stdout("page load");
 let ctx: AudioContext;
@@ -130,7 +131,7 @@ async function gotCtx() {
       );
     }
   }
-  loadtbls();
+  loadtbls(['pages/0_0.dat', 'pages/60_0.dat', 'pages/80_0.dat', 'pages/128_0']);
   run_samples();
 }
 init_audio_ctx().then(gotCtx);

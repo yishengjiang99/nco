@@ -1,8 +1,20 @@
-export function bindMidiAccess(procPort, noteOn, noteOff, stdout, stderr) {
+export async function bindMidiAccess(procPort, noteOn, noteOff, stdout, stderr) {
     // @ts-ignore
-    return navigator.requestMIDIAccess().then((midiAccess) => {
+    const midiAccess = await navigator.requestMIDIAccess();
+    stdout("midi access grant");
+    const midiInputs = Array.from(midiAccess.inputs.values());
+    const midiStream = new TransformStream();
+    procPort.postMessage(midiStream.readable);
+    for (const input of midiInputs) {
+        // @ts-ignore
+        input.onmidimessage = ({ data, timestamp }) => {
+        };
+    }
+    then((midiAccess) => {
         stdout("midi access grant");
         const midiInputs = Array.from(midiAccess.inputs.values());
+        const midiStream = new TransformStream();
+        procPort.postMessage();
         for (const input of midiInputs) {
             // @ts-ignore
             input.onmidimessage = ({ data, timestamp }) => {
