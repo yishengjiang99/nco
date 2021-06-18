@@ -35,7 +35,7 @@
     },
   });
 
-  export default {
+  export const API = {
     mem,
     HEAPF32: new Float32Array(mem.buffer),
     HEAPU8: new Uint8Array(mem.buffer),

@@ -68,7 +68,7 @@ function noteOff(midi, channel = 0) {
     envelope.gain.exponentialRampToValueAtTime(0.00001, state.release[0]);
 }
 async function gotCtx() {
-    const { inputAnalyzer, outputAnalyzer, run_samples, disconnect } = io_samplers(ctx, 1024, console.log);
+    const { inputAnalyzer, outputAnalyzer, run_samples, disconnect } = io_samplers(ctx, 1024);
     analy = new AnalyserNode(ctx, { fftSize: 256 });
     awn
         .connect(inputAnalyzer)
