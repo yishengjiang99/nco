@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>Wavetable Oscillators</title>
-]
+
     <style>
       body {
         display: grid;
@@ -11,16 +11,34 @@
     </style>
   </head>
   <body>
-    <nav>
-    
-<code>trap</code> music
-    </nav>
-    <main class="container">
-    </main>
+    <nav><code id="rx1">trap</code> music</nav>
+
+    <div
+      style="
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        height: 200px;
+        place-items: center;
+      "
+    >
+      <div><canvas id="input_freq"></canvas></div>
+      <div><canvas id="output_freq"></canvas></div>
+      <div><canvas id="canvas1"></canvas></div>
+      <div><canvas id="canvas2"></canvas></div>
+    </div>
+
+    <main
+      style="
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-width: 1024;
+        height: 200px;
+        place-items: center;
+      "
+      class="container"
+    ></main>
   </body>
   <template></template>
-  <script type="module" src="./dist/web/main-thread.js"></script>
-  <script>
-
-  </script>
+  <script type="module" src="./dist/main-thread.js"></script>
+  <script></script>
 </html>
