@@ -1,48 +1,65 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "wavetable_oscillator.c"
+#include "fft.c"
 #include "math.h"
+#include "string.h"
+#include "tbls.c"
+#include "wavetable_oscillator.c"
 typedef wavetable_oscillator_data wosc;
-int main()
-{
-	init_oscillators();
+int main() {
+  FILE *output = stdout;
+  init_oscillators(1);
+  int N = 4096, n = 12;
+  set_midi(0, 69);
+  printf("\n %d, %f", oscillator->phaseIncrement,
+         ((float)oscillator->phaseIncrement));
+  set_midi(0, 68);
+  printf("\n %d, %f", oscillator->phaseIncrement,
+         ((float)oscillator->phaseIncrement));
+  complex *instrument = (complex *)sawt;
+  bzero(instrument, 4096 * 2 * 8);
+  double sbtl[N / 4];
+  sin_table(sbtl, n);
+  for (int i = 0; i < N; i++)
+    printf("\n %d, \n%f,\t%f ", i, sbtl[i / 4], (double)instrument[i].real);
 
-	float instrument[4096];
-	FILE *fd = fopen("pcm/Piano_4096.pcm", "rb");
-	fread(sample_tables + 0, 4096, 4, fd);
-	FILE *output = popen("ffmpeg -f f32le -i pipe:0 -ac 1 -ar 48000 -f WAV piano_midi66_adsr.wav", "w");
-	set_midi(0, 66);
+  bit_reverse(instrument, n);
+  iFFT(instrument, N, sbtl);
+  // for (int i = 0; i < N; i++)
+  //   printf("\n $d %d, \t %f", i, (float)instrument[i].real,
+  //          (float)instrument[i].imag);
 
-	float sustain = 0.7f;
-	float fade_sequence[5] = {
-			powf(2, -7973.f / 1200.0f) * SAMPLE_RATE,
-			powf(2, -8000.f / 1200.0f) * SAMPLE_RATE,
-			powf(2, -11999.f / 1200.0f) * SAMPLE_RATE,
-			powf(2, 713.f / 1200.0f) * SAMPLE_RATE,
-			powf(2, 8000.f / 1200.0f) * SAMPLE_RATE};
+  for (int i = 0; i < N; i++) sample_tables[i] = (float)instrument[i].imag;
 
-	float *from_wave[5] = {
-			silence, silence, sample_tables, sample_tables, sample_tables};
-	float *dest_wave[5] = {silence,
-												 sample_tables,
-												 sample_tables, silence, silence};
-	float dim1fade[5] = {1.0f, 1.0f, 1.0f, 1.0f, sustain};
-	float *piano_minus_5_db = sample_tables;
-	int state = 0;
+  set_midi(0, 33);
 
-	for (int timer = 0; state < 4 && timer < 48000 * 10; timer += 128)
-	{
-		if (timer > fade_sequence[state])
-		{
-			state++;
-			oscillator[0].wave000 = from_wave[state]; //++;
-			oscillator[0].wave001 = dest_wave[state];
-			oscillator[0].fadeDim1 = 0.0f;
-			oscillator[0].fadeDim1Increment = (float)1.0f / fade_sequence[state];
-		}
+  float sustain = 0.7f;
+  for (int i = 0; i < N; i++)
+    sample_tables[128 + i] = (float)instrument[i].real * sustain;
+  float fade_sequence[5] = {.001 * SAMPLE_RATE, .1 * SAMPLE_RATE,
+                            .2 * SAMPLE_RATE, .3 * SAMPLE_RATE,
+                            .1 * SAMPLE_RATE};
 
-		wavetable_2dimensional_oscillator(&(oscillator[0]));
-		fwrite(oscillator[0].output_ptr, 128, 4, output);
-	}
+  float *from_wave[5] = {sample_tables, sample_tables, sample_tables,
+                         sample_tables, sample_tables};
+  float *dest_wave[5] = {silence, sample_tables, sample_tables,
+                         sample_tables + 128, silence};
+  int state = 0;
+  output = fopen("ffplay -i pipe:0 -ac 1", "w");
+  for (int timer = 0; state < 4 && timer < 48000 * 10; timer += 128) {
+    if (timer > fade_sequence[state]) {
+      state++;
+      oscillator[0].wave000 = from_wave[state];  //++;
+      oscillator[0].wave001 = dest_wave[state];
+      oscillator[0].fadeDim1 = 0.0f;
+      oscillator[0].fadeDim1Increment = fade_sequence[state];
+    }
+
+    wavetable_1dimensional_oscillator(oscillator);
+    bzero(oscillator->output_ptr, 128 * 4);
+    //  for (int i = 0; i < N; i++) printf("\n%f", oscillator[0].output_ptr[i]);
+
+    fwrite(oscillator[0].output_ptr, 128, 4, output);
+  }
 }
