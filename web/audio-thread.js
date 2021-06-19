@@ -88,7 +88,7 @@ function onMSG(e) {
 
   if (setMidiNote) {
     const {channel, value} = setMidiNote;
-    Module.set_midi(channel, value & 0x7f);
+    Module.set_midi(channel, value);
   }
   if (setPhaseIncrement) {
     const {channel, value} = setPhaseIncrement;
@@ -116,7 +116,7 @@ function onMSG(e) {
   }
 }
 function spinOscillators(channel) {
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 1; i++) {
     for (let f = 0; f < 128; f++) {
       soundCards[i][f] = 0;
     }

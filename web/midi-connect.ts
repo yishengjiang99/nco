@@ -10,8 +10,6 @@ export async function bindMidiAccess(
   const midiAccess = await navigator.requestMIDIAccess();
   stdout("midi access grant");
   const midiInputs = Array.from(midiAccess.inputs.values());
-  const midiStream = new TransformStream();
-  procPort.postMessage(midiStream.readable)
   for (const input of midiInputs)
   {
     // @ts-ignore
