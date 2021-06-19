@@ -1,6 +1,6 @@
 import {API as Module} from '../build/wavetable_oscillator.js';
 let awpport;  // msg port to main thread; instantiates in the RendProc
-              // constructors
+// constructors
 
 const osc_ref = Module.init_oscillators();
 const osc_struct_size = Module.wavetable_struct_size();
@@ -12,23 +12,23 @@ const phaseViews = [];
 const faderViews = [];
 const tbViews = [];
 const waveTableRegistry = [];
-for (let i = 0; i < 16; i++) {
+for (let i = 0;i < 16;i++) {
   const ptr =
-      new Uint32Array(Module.mem.buffer, osc_ref + osc_struct_size * i, 1)[0];
+    new Uint32Array(Module.mem.buffer, osc_ref + osc_struct_size * i, 1)[0];
 
   soundCards.push(new Float32Array(Module.mem.buffer, ptr, 128));
   phaseViews.push(new DataView(
-      Module.mem.buffer,
-      osc_ref + osc_struct_size * i + 2 * Float32Array.BYTES_PER_ELEMENT, 24));
+    Module.mem.buffer,
+    osc_ref + osc_struct_size * i + 2 * Float32Array.BYTES_PER_ELEMENT, 24));
   faderViews.push(new DataView(
-      Module.mem.buffer,
-      osc_ref + osc_struct_size * i + 9 * Float32Array.BYTES_PER_ELEMENT, 24));
+    Module.mem.buffer,
+    osc_ref + osc_struct_size * i + 9 * Float32Array.BYTES_PER_ELEMENT, 24));
   tbViews.push(new DataView(Module.mem.buffer, chref(i) + 15 * 4));
 }
 function osc_info(ref) {
   const table = new Uint32Array(Module.mem.buffer, ref, osc_struct_size);
   const [output_ptr, samples_per_block, phase, phaseIncrement] =
-      new Uint32Array(Module.mem.buffer, osc_ref, 4);
+    new Uint32Array(Module.mem.buffer, osc_ref, 4);
   const [
     fadeDim1,
     fadeDim1Increment,
@@ -42,7 +42,7 @@ function osc_info(ref) {
     6
   );
   const [wv00, wv01, wv10, wv11] = new Uint32Array(
-      Module.mem.buffer, osc_ref + 15 * Float32Array.BYTES_PER_ELEMENT, 6);
+    Module.mem.buffer, osc_ref + 15 * Float32Array.BYTES_PER_ELEMENT, 6);
   return {
     output_ptr,
     samples_per_block,
@@ -77,9 +77,11 @@ function onMSG(e) {
     const reader = readable.getReader();
     let tbIdx = 0;
     reader.read().then(function process({value, done}) {
-      if (done || value.length == 0) return;
-      const ref = Module.sampleTableRef(tbIdx++);
-      Module.HEAPF32.set(new Float32Array(value), ref);
+      if (done) return;
+      if (value) {
+        const ref = Module.sampleTableRef(tbIdx++);
+        Module.HEAPF32.set(new Float32Array(value), ref);
+      }
 
       reader.read().then(process);
     });
@@ -109,15 +111,15 @@ function onMSG(e) {
     let {channel, tbIndex, formIndex} = setTable;
     formIndex = parseInt(formIndex);  // from 'string'....
     tbViews[channel].setUint32(
-        tbIndex * Uint32Array.BYTES_PER_ELEMENT,
-        Module.sampleTableRef(formIndex), true);
+      tbIndex * Uint32Array.BYTES_PER_ELEMENT,
+      Module.sampleTableRef(formIndex), true);
 
-    awpport.postMessage({fl, osc_table: osc_info(chref(channel))});
+    awpport.postMessage({osc_table: osc_info(chref(channel))});
   }
 }
 function spinOscillators(channel) {
-  for (let i = 0; i < 1; i++) {
-    for (let f = 0; f < 128; f++) {
+  for (let i = 0;i < 1;i++) {
+    for (let f = 0;f < 128;f++) {
       soundCards[i][f] = 0;
     }
     Module.wavetable_1dimensional_oscillator(osc_ref + osc_struct_size * i);
@@ -136,7 +138,7 @@ class RendProc extends AudioWorkletProcessor {
     awpport = this.port;
   }
   process(inputs, outputs) {
-    for (let i = 0; i < outputs.length; i++) {
+    for (let i = 0;i < outputs.length;i++) {
       outputs[i][0].set(soundCards[i]);
       outputs[i][1].set(soundCards[i]);
     }

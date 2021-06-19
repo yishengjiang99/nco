@@ -68,7 +68,8 @@ export async function loadPeriodicForms(tablename) {
     osc.connect(ctx.destination);
     osc.start();
     osc.stop(1.0);
-    return (await ctx.startRendering()).getChannelData(0);
+    (await ctx.startRendering()).getChannelData(0);
+    return;
 }
 export async function fft(fl) {
 }

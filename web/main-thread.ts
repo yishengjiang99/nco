@@ -161,14 +161,14 @@ function loadtbls() {
   const writer = http_to_audio_thread_pipe.writable.getWriter();
   (async () => {
     for await (const { name, fl32arr } of (async function* dl_queue() {
-      let _tbs = ['pages/0_0.dat', 'pages/60_0.dat', 'pages/80_0.dat', 'pages/128_0'].concat(tbs)
+      let _tbs = tbs;
       while (_tbs.length)
       {
         const name = _tbs.shift();
         const fl32arr = await loadPeriodicForms(name!);
         yield { name, fl32arr };
       }
-      return;
+      return { name: "done", fl32arr: new Float32Array([]) }
     })())
     {
       writer.write(fl32arr);
