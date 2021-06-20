@@ -10,7 +10,6 @@
     </style>
   </head>
   <body>
-    <<<<<<< HEAD
     <nav><code id="rx1">trap</code> music</nav>
 
     <div
@@ -37,12 +36,49 @@
       "
       class="container"
     ></main>
-    =======
-    <nav><code>trap</code> music</nav>
-    <main class="container"></main>
-    >>>>>>> master
   </body>
+  <div id="msg"></div>
+  <pre></pre>
   <template></template>
   <script type="module" src="./dist/main-thread.js"></script>
+  <!-- <script>
+    const console = document.querySelector("pre");
+    const divv = document.querySelector("#msg");
+    let stateBuffer, inputBuffer, outputBuffer;
+    let inputOffset = 0,
+      sharedBuffer = null;
+    const stateBufferLength = 8 * BigInt64Array.BYTES_PER_ELEMENT;
+
+    const worker = new Worker("dist/worker.js", { type: "module" });
+    if (sharedBuffer) {
+      stateBuffer = new BigInt64Array(sharedBuffer, 0, 8);
+      inputBuffer = new Uint32Array(
+        sharedBuffer,
+        8 * BigInt64Array.BYTES_PER_ELEMENT,
+        1024
+      );
+      oscillatorStates = new Uint8Array(
+        sharedBuffer,
+        8 * BigInt64Array.BYTES_PER_ELEMENT + 1024 * Uint32Array,
+        0x7fff
+      );
+      window.onkeydown = (e) => {
+        inputBuffer[inputOffset++] = e.key;
+        stateBuffer[0] = BigInt(1);
+        Atomics.notify(stateBuffer, StateEventIndex.user_input, 1 << 32);
+      };
+    }
+    const StateEventIndex = {
+      worker_init: 0,
+      user_input: 1,
+      user_input_set: 2,
+      playback_on: 3,
+    };
+    worker.onmessage = function ({ data: { sharedBuffer, msg, info } }) {
+      if (info) divv.innerHTML = JSON.stringify(info);
+    };
+    worker.onerror = (e) =>
+      (divv.innerHTML = e.message + " ERROR ;" + e.toString());
+  </script> -->
   <script></script>
 </html>

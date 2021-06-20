@@ -7,7 +7,7 @@
     "test": "test"
   },
   "dependencies": {
-    "comlink": "^4.3.0",
+    "comlink": "^4.3.1",
     "draw-canvas-60fps": "^1.0.0",
     "fft": "^0.2.1",
     "karma-chrome-launcher": "^3.1.0",

@@ -1,3 +1,29 @@
+export async function init_ctx() {
+    const { heap, instance } = await init_wasm({ url: "../build/wavetable_oscillator.wasm" });
+    const osc_ref = instance.exports.init_oscillators();
+    const osc_struct_size = instance.exports.wavetable_struct_size();
+    const oscs = [];
+    const chref = (ch) => osc_ref + osc_struct_size * ch;
+    for (let i = 0; i < 16; i++) {
+        oscs.push(new Osc(heap, chref(i)));
+    }
+    return {
+        instance,
+        heap,
+        wavetable_0dimensional_oscillator: instance.exports.wavetable_0dimensional_oscillator,
+        wavetable_1dimensional_oscillator: instance.exports.wavetable_1dimensional_oscillator,
+        wavetable_2dimensional_oscillator: instance.exports.wavetable_2dimensional_oscillator,
+        wavetable_3dimensional_oscillator: instance.exports.wavetable_3dimensional_oscillator,
+        sampleTableRef: instance.exports.sampleTableRef,
+        setMidi: instance.exports.set_midi,
+        setWaveTable: (flarr, tableIndex) => {
+            heap.set(flarr, instance.exports.sampleTableRef(tableIndex));
+        },
+        osc_struct_size,
+        chref,
+        oscs,
+    };
+}
 export async function init_wasm({ url, wasmbin }) {
     const mem = new WebAssembly.Memory({
         initial: 150,
@@ -124,27 +150,4 @@ export class Osc {
     set wave111(ref) {
         this.struct.setUint32(76, ref, true);
     }
-}
-export async function init_ctx({ heap, instance }) {
-    const osc_ref = instance.exports.init_oscillators();
-    const osc_struct_size = instance.exports.wavetable_struct_size();
-    const oscs = [];
-    const chref = (ch) => osc_ref + osc_struct_size * ch;
-    for (let i = 0; i < 16; i++) {
-        oscs.push(new Osc(heap, chref(i)));
-    }
-    return {
-        instance,
-        heap,
-        wavetable_0dimensional_oscillator: instance.exports.wavetable_0dimensional_oscillator,
-        wavetable_1dimensional_oscillator: instance.exports.wavetable_1dimensional_oscillator,
-        wavetable_2dimensional_oscillator: instance.exports.wavetable_2dimensional_oscillator,
-        wavetable_3dimensional_oscillator: instance.exports.wavetable_3dimensional_oscillator,
-        sampleTableRef: instance.exports.sampleTableRef,
-        setMidi: instance.exports.set_midi,
-        setWaveTable: (flarr, tableIndex) => {
-            heap.set(flarr, instance.exports.sampleTableRef(tableIndex));
-        },
-        oscs,
-    };
 }

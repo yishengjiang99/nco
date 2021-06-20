@@ -5,7 +5,7 @@
 int main() {
   float *piano = sample_tables + 10 * 4096;
 
-  void *ref = init_oscillators();
+  void *ref = init_oscillators(1);
 
   FILE *w = popen("ffplay  -ac 1 -ar 48000 -f f32le -i pipe:0", "w");
 

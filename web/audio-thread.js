@@ -1,7 +1,7 @@
 import {API as Module} from '../build/wavetable_oscillator.js';
 let awpport;
-
-const osc_ref = Module.init_oscillators();
+const n_osc = 4;
+const osc_ref = Module.init_oscillators(n_osc);
 const heap = Module.HEAPU8;
 const osc_struct_size = Module.wavetable_struct_size();
 const chref = (ch) => osc_ref + osc_struct_size * ch;
@@ -26,21 +26,21 @@ const output_ptr_index = 0,
 	fadeDim3Increment_index = 56;
 const wavetableIndices = [60, 64, 68, 72, 76, 80, 84, 88];//didn't know i could count this high.
 
-for (let i = 0;i < 16;i++) {
+for (let i = 0;i < n_osc;i++) {
 	const outputPtr = new Uint32Array(Module.mem.buffer, osc_ref + osc_struct_size * i, 1)[0];
-	soundCards.push(new Float32Array(Module.mem.buffer, outputPtr, 128));
+	soundCards.push(new Float32Array(Module.mem.buffer, outputPtr, 32));
 	structViews.push(new DataView(Module.mem.buffer, osc_ref + osc_struct_size * i, osc_struct_size));
 }
 
 function osc_info(ref) {
-	const table = new Uint8Array(Module.mem.buffer, ref, osc_struct_size);
-	const [output_ptr, samples_per_block, phase] = new Uint32Array(heap, ref, 0);
-	const [phaseIncrement, frequencyIncrement] = new Int32Array(heap, ref + 3 * 4);
-	const [num_fractionalBits, mask_fractionalBits, mask_waveIndex] = new Uint32Array(heap, ref + 3 * 4 + 4 * 2);
-	const [scaler_fractionalBits, ...table5] = new Float32Array(heap, ref + 3 * 4 + 4 * 2 + 3 * 12);
+	const table = new Uint8Array(heap, ref, osc_struct_size);
+	const [output_ptr, samples_per_block, phase] = new Uint32Array(heap, ref, 4);
+	const [phaseIncrement, frequencyIncrement] = new Int32Array(heap, ref + phase_index, 2);
+	const [num_fractionalBits, mask_fractionalBits, mask_waveIndex] = new Uint32Array(heap, ref + num_fractionalBits_index, 3);
+	const [scaler_fractionalBits] = new Float32Array(heap, ref + scaler_fractionalBits_index, 1);
 	const [fadeDim1, fadeDim1Increment, fadeDim2, fadeDim2Increment, fadeDim3, fadeDim3Increment
-	] = new Float32Array(heap, ref + fadeDim1_index);
-	const [waveTableRefs] = new Uint32Array(heap, ref + wavetableIndices[0]);
+	] = new Float32Array(heap, ref + fadeDim1_index, 6);
+	const [waveTableRefs] = new Uint32Array(heap, ref + wavetableIndices[0], 8);
 	return {output_ptr, samples_per_block, phase, phaseIncrement, frequencyIncrement, num_fractionalBits, mask_fractionalBits, mask_waveIndex, scaler_fractionalBits, fadeDim1, fadeDim1Increment, fadeDim2, fadeDim2Increment, fadeDim3, fadeDim3Increment, waveTableRefs};
 }
 
@@ -63,9 +63,10 @@ export function onMSG(e) {
 	if (noteOn) {
 		const {channel, note, velocity} = noteOn;
 		Module.set_midi(channel, note);
-		structViews[channel].setFloat32(fadeDim1_index, 0.0, true);
+
+		structViews[channel].setFloat32(fadeDim1_index, .5, true);
 		structViews[channel].setFloat32(fadeDim1Increment_index, 0.1 / sampleRate, true);
-		structViews[channel].setFloat32(fadeDim2_index, .5, true);
+		structViews[channel].setFloat32(fadeDim2_index, 0.5, true);
 	}
 	if (noteOff) {
 		const {channel, note} = noteOff;
@@ -83,7 +84,7 @@ export function spinOscillators(channel, ob) {
 			soundCards[channel][f] = 0;
 		}
 
-		Module.wavetable_3dimensional_oscillator(osc_ref + osc_struct_size * channel);
+		Module.wavetable_2dimensional_oscillator(osc_ref + osc_struct_size * channel);
 
 		for (let f = 0;f < 36;f++) {
 			ob[k] = soundCards[channel][k + f];
