@@ -1,7 +1,8 @@
 import {API as Module} from '../build/wavetable_oscillator.js';
-let awpport;  // msg port to main thread; instantiates in the RendProc
+let awpport;  // msg port to main thread; 
+//instantiates in the RendProc
 // constructors
-
+const bit32Normalize = 4294967296.0 / sampleRate;
 const osc_ref = Module.init_oscillators();
 const osc_struct_size = Module.wavetable_struct_size();
 console.assert(osc_struct_size > 1);
@@ -93,15 +94,15 @@ function onMSG(e) {
 
   if (setMidiNote) {
     const {channel, value} = setMidiNote;
-    Module.set_midi(channel, value);
+    phaseViews[channel].setInt32(4, ~~(Math.pow(2.0, value / 12) * 8.176 * bit32Normalize), true);
   }
   if (setPhaseIncrement) {
     const {channel, value} = setPhaseIncrement;
     phaseViews[channel].setFloat32(2, value, true);
   }
   if (setFade) {
-    const {channel, value} = setFade;
-    faderViews[channel].setFloat32(0, value, true);
+    const {channel, value, index} = setFade;
+    faderViews[channel].setFloat32((index || 0) * 4, value, true);
   }
   if (setFadeDelta) {
     const {channel, value} = setFadeDelta;

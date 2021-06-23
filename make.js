@@ -1,30 +1,11 @@
 'use strict';
 const fs = require('fs');
-// const ws = fs.createWriteStream("sample_tables.c");
-// const files = fs.readdirSync("./offline-periodicwaves/pcm");
-// ws.write(`
-// typedef struct
-// {
-// 	float pcm[4096];
-// 	char name[20];
-// 	short coarseTune, fineTune, originalPitch;
-// 	uint8_t lo_key, hi_key;
-// } sample_table;
-// static sample_table smpls[${files.length}];`);
-// files.forEach((file, idx) => {
-//     const pcm = new
-//     Float32Array(fs.readFileSync("./offline-periodicwaves/pcm/" +
-//     file).buffer); ws.write(`smpls[${idx}].name = "${file}";\n
-// 		smpls[${idx}].pcm = (float){
-// 			${pcm.join(", ")}
-// 		}; \n`);
-// });
-// ws.end();
-require('child_process')
-    .execSync(
-        'npx wa compile src/wavetable_oscillator.c -o build/wavetable_oscillator.wasm');
+const execSync = require('child_process')
+  .execSync;
+
+execSync('npx wa compile -g 3 -s 120 src/wavetable_oscillator.c -o build/wavetable_oscillator.wasm');
 fs.writeFileSync(`build/wavetable_oscillator.js`, `// prettier-ignore
-  const wasmBinary = new Uint8Array([
+  export const wasmBinary = new Uint8Array([
     ${fs.readFileSync('build/wavetable_oscillator.wasm').join(',')}
   ]);
   const mem = new WebAssembly.Memory({
@@ -32,7 +13,7 @@ fs.writeFileSync(`build/wavetable_oscillator.js`, `// prettier-ignore
     maximum: 150,
   });
   let heap = new Uint8Array(mem.buffer);
-  let brk = 0;
+  let brk = 0x7fff;
   const sbrk = function (size) {
     const old = brk;
     brk += size;
@@ -69,8 +50,7 @@ fs.writeFileSync(`build/wavetable_oscillator.js`, `// prettier-ignore
   };
   
   `);
-const execSync = require('child_process').execSync;
-// execSync("EMCC_DEBUG=1 emcc src/test.c -o test.html");
+//execSync("EMCC_DEBUG=1 emcc src/test.c -o test.html");
 const fns = [
   'wavetable_0dimensional_oscillator',
   'wavetable_1dimensional_oscillator',

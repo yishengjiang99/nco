@@ -10,12 +10,15 @@ module.exports = function (config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha'],
+    frameworks: ['mocha', 'chai'],
 
 
     // list of files / patterns to load in the browser
     files: [
-      'test/*'
+      {pattern: "test/wavetable-oscilator.spec.js", type: "module", included: "true"},
+      {pattern: "web/wavetable-oscillator.js", type: "module", included: "true"},
+      {pattern: "build/wavetable_oscillator.js", type: "module", included: "true"}
+
     ],
 
 
@@ -56,13 +59,6 @@ module.exports = function (config) {
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     browsers: ['Chrome'],
-    files: [
-
-      {
-        pattern: "test/*.spec.js",
-        type: "module",
-      },
-    ],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits

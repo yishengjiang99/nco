@@ -2,7 +2,6 @@
 #include <string.h>
 
 #include "fft.c"
-#include "tbls.c"
 #include "wavetable_oscillator.c"
 static inline void loadpcm(float *arr, const char *filename) {
   FILE *fd = fopen(filename, "rb");
@@ -11,12 +10,13 @@ static inline void loadpcm(float *arr, const char *filename) {
 }
 
 int main() {
+  int N = 4096;
   void *ref = init_oscillators(4);
   FILE *fd;
   float *sample;
 
-  loadpcm(oscillator[0].wave000, sawt);
-  complex *instrument = (complex *)sawt;
+  loadpcm(oscillator[0].wave000, squarewave);
+  complex *instrument = (complex *)sinewave;
   bzero(instrument, 4096 * 2 * 8);
   double sbtl[WAVETABLE_SIZE / 4];
   sin_table(sbtl, LOG2_WAVETABLE_SIZE);

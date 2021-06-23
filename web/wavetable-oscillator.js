@@ -1,3 +1,4 @@
+
 export async function init_wasm({ url, wasmbin }) {
     const mem = new WebAssembly.Memory({
         initial: 150,
@@ -126,7 +127,7 @@ export class Osc {
     }
 }
 export async function init_ctx({ heap, instance }) {
-    const osc_ref = instance.exports.init_oscillators();
+    const osc_ref = instance.exports.init_oscillators(5);
     const osc_struct_size = instance.exports.wavetable_struct_size();
     const oscs = [];
     const chref = (ch) => osc_ref + osc_struct_size * ch;
