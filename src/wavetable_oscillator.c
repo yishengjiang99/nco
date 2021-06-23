@@ -347,3 +347,37 @@ wavetable_oscillator_data *init_oscillators() {
 
 
 int wavetable_struct_size() { return sizeof(wavetable_oscillator_data); }
+
+void put_midi_msg(char *msg) {
+  int channel = msg[0] & 0x0f;
+  int cmd = msg[0] & 0x80 >> 1;
+  int note = msg[1] & 0x7f;
+  int vel = msg[1] & 0x7f;
+  enum midi_channel_msgs {
+    noteoff = 0x08,
+    noteon,
+    keyaftertouch,
+    controlchange,
+    channelmode,
+    nrpn = 0xB,         // 11
+    programchange,      // : 0xC,      // 12
+    channelaftertouch,  // : 0xD,  // 13
+    pitchbend,          // : 0xE           // 14
+  };
+  switch (cmd) {
+    case programchange:
+      oscillator[channel].wave000 =
+
+          break;
+    case noteoff:
+      oscillator[channel].fadeDim2Increment =
+          -(float)(vel / 127.f) / SAMPLE_RATE;
+      break;
+    case noteon:
+      oscillator[channel].fadeDim2Increment =
+          +(float)(vel / 59.f) / SAMPLE_RATE;
+
+      break;
+      oscillator[channel].fadeDim1 = -(float)vel / SAMPLE_RATE;
+  }
+}

@@ -51,7 +51,15 @@ export const tbs = [
     "Wurlitzer_2",
     "Wurlitzer",
 ];
-export async function loadPeriodicForms(tablename) {
+async function loadPreset(tableName) {
+    const tabls = {
+        imag: new Float32Array(await (await fetch("wvtable_pcm/" + tablename + "_img.pcm")).arrayBuffer()),
+        real: new Float32Array(await (await fetch("wvtable_pcm/" + tablename + "_real.pcm")).arrayBuffer()),
+    }
+    return await loadPeriodicForms(real, image);
+
+}
+export async function loadPeriodicForms(real, image) {
     let ctx = new OfflineAudioContext({
         numberOfChannels: 1,
         length: 4096,
@@ -60,16 +68,19 @@ export async function loadPeriodicForms(tablename) {
     let osc = new OscillatorNode(ctx, {
         type: "custom",
         periodicWave: new PeriodicWave(ctx, {
-            imag: new Float32Array(await (await fetch("wvtable_pcm/" + tablename + "_img.pcm")).arrayBuffer()),
-            real: new Float32Array(await (await fetch("wvtable_pcm/" + tablename + "_real.pcm")).arrayBuffer()),
+            imag: new Float32Array(real),
+            real: new Float32Array(image)
         }),
         frequency: 1,
     });
     osc.connect(ctx.destination);
     osc.start();
     osc.stop(1.0);
-    (await ctx.startRendering()).getChannelData(0);
-    return;
+    return (await ctx.startRendering()).getChannelData(0);
 }
+
+
+
+
 export async function fft(fl) {
 }

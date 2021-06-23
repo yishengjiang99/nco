@@ -13,7 +13,8 @@
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^3.1.0",
     "mkdiv": "^1.0.1",
-    "sf2-sql": "^1.1.0"
+    "sf2-sql": "^1.1.0",
+    "webmidi": "^2.5.2"
   },
   "scripts": {
     "build": "node make",
