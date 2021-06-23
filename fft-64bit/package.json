@@ -1,0 +1,14 @@
+{
+  "name": "bit64-rdfft",
+  "version": "1.0.0",
+  "description": "",
+  "main": "fft.wasmmodule.js",
+  "type": "module",
+  "scripts": {
+    "build": "make",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Yisheng Jiang",
+  "license": "ISC"
+}
