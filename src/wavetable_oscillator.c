@@ -1,53 +1,5 @@
-
-#define NUM_OSCILLATORS 16
-#define SAMPLE_BLOCKSIZE 128
-
-#define MASK_FRACTIONAL_BITS 0x000FFFFF
-#define MASK_WAVEINDEX 0x00000FFFUL
-#define WAVETABLE_SIZE 4096
-#define LOG2_WAVETABLE_SIZE 12
-
-#define PIF 3.1415926539f
-#define BIT32_NORMALIZATION 4294967296.0f
-#define SAMPLE_RATE 48000.0f
-typedef unsigned int uint32_t;
-typedef int int32_t;
-//
-//  This typedef in wavetable_oscillator.h
-//
-typedef struct {
-  float *output_ptr;      // 0
-  int samples_per_block;  // 4
-
-  uint32_t phase;  // 8
-  int32_t phaseIncrement;
-  int32_t frequencyIncrement;
-
-  unsigned int num_fractionalBits;
-  uint32_t mask_fractionalBits;  // 2^num_fractionalBits - 1
-  unsigned int mask_waveIndex;
-  float scaler_fractionalBits;  // 2^(-num_fractionalBits)
-
-  float fadeDim1;
-  float fadeDim1Increment;
-  float fadeDim2;
-  float fadeDim2Increment;
-  float fadeDim3;
-  float fadeDim3Increment;
-
-  float *wave000;
-  float *wave001;
-  float *wave010;
-  float *wave011;
-  float *wave100;
-  float *wave101;
-  float *wave110;
-  float *wave111;
-} wavetable_oscillator_data;
-//
-// #include "wavetable_oscillator.h"
-//
-
+#include "wavetable_oscillator.h"
+#include "LUT.h"
 extern float powf(float b, float x);
 extern float sinf(float x);
 void wavetable_0dimensional_oscillator(
@@ -284,26 +236,17 @@ void wavetable_3dimensional_oscillator(
   this_oscillator->phase = phase;
   this_oscillator->phaseIncrement = phaseIncrement;
 }
-static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
-static float sinewave[WAVETABLE_SIZE];
-static float squarewave[WAVETABLE_SIZE];
-static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
-static float silence[WAVETABLE_SIZE];
-static float sample_tables[WAVETABLE_SIZE * 100];
-float *sampleRef = &sample_tables[0];
-
 void *sampleTableRef(int tableNumber) {
   return sample_tables + WAVETABLE_SIZE * tableNumber;
 }
-#include "stbl.c"
 wavetable_oscillator_data *init_oscillators() {
   //
   // float sinewave[WAVETABLE_SIZE], squarewave[WAVETABLE_SIZE];
 
   for (int n = 0; n < WAVETABLE_SIZE; n++) {
-    sinewave[n] = (float)stbl[n]; 
+    sinewave[n] = (float)stbl[n];
+ 
   }
-
   for (int n = 0; n < WAVETABLE_SIZE / 4; n++) {
     squarewave[n] = 0.5;
     squarewave[n + WAVETABLE_SIZE / 4] = -0.5;
@@ -366,18 +309,49 @@ void put_midi_msg(char *msg) {
   };
   switch (cmd) {
     case programchange:
-      oscillator[channel].wave000 =
-
-          break;
+      oscillator[channel].wave000 = sampleTableRef(msg[1] & 0x7f);
+      oscillator[channel].wave001 = sinewave;
+      break;
     case noteoff:
-      oscillator[channel].fadeDim2Increment =
-          -(float)(vel / 127.f) / SAMPLE_RATE;
+      oscillator[channel].fadeDim1Increment = -300.0f / SAMPLE_RATE;
+      oscillator[channel].wave000 = silence;
       break;
     case noteon:
-      oscillator[channel].fadeDim2Increment =
-          +(float)(vel / 59.f) / SAMPLE_RATE;
+      set_midi(&oscillator[channel], note);
+      oscillator[channel].fadeDim1Increment = 400.0f / SAMPLE_RATE;
 
       break;
-      oscillator[channel].fadeDim1 = -(float)vel / SAMPLE_RATE;
+    default:
+      break;
   }
 }
+#include <stdio.h>
+
+#include "LUT.h"
+#include "fft.c"
+void set_midi(wavetable_oscillator_data *osc, uint8_t midi){
+    float frequency = 440.0f * powf(2.0f, (float)(midi - 69) / 12.0f);
+  oscillator[1].phaseIncrement =
+      (int)(frequency / SAMPLE_RATE * BIT32_NORMALIZATION + .5f);
+}
+// int main() {
+//   wavetable_oscillator_data* osc = init_oscillators();
+//   int N = 4096, n = 12, sr = 441000, nyquist = 22000;
+//   float bin_freq[4096 / 2];
+//   complex t[4096];
+//   for (int i = 0; i < N / 2; i++) {
+//     bin_freq[i] = 22000 / N * i;
+//     //  printf("\n%d %f", i, bin_freq[i]);
+//     t[i].real = (float)sinewave[i];
+//     t[i].imag = 0.0f;
+//   }
+//   FFT(t, n, stbl);
+
+//   for (int i = 0; i < N / 2; i++) {
+//     bin_freq[i] = 220000 / N * i;
+//     printf("\n%d %f", i, t[i].real);  //[i]);
+//     t[i].real = (float)sinewave[i];
+//     t[i].imag = 0.0f;
+//   }
+//   return 1;
+// }

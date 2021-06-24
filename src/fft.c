@@ -41,19 +41,19 @@ typedef struct {
 #define Im(z) (z).imag
 
 void FFT(complex *x, int n, double *stbl) {
-  long size;
-  register long length, step, stepsize, end;
+  int size;
+  register int length, step, stepsize, end;
   register complex *top, *bottom; /* top & bottom of FFT butterfly */
   complex temp;
 
   size = 1L << (n - 2);
-  end = (long)x + 4 * sizeof(temp) * size;
+  end = (int)x + 4 * sizeof(temp) * size;
 
   length = size;
   stepsize = 1;
   while (length >= 1) {
     top = x;
-    while ((long)top < end) {
+    while ((int)top < end) {
       bottom = top + 2 * length;
 
       Re(temp) = Re(*top) - Re(*bottom); /* butterfly: twiddle = 1 */
@@ -103,7 +103,7 @@ void FFT(complex *x, int n, double *stbl) {
 
   top = x;
   bottom = x + 1;
-  while ((long)top < end) {
+  while ((int)top < end) {
     Re(temp) = Re(*top) - Re(*bottom); /* butterfly: twiddle = 1 */
     Im(temp) = Im(*top) - Im(*bottom);
     Re(*top) += Re(*bottom);
@@ -115,19 +115,19 @@ void FFT(complex *x, int n, double *stbl) {
 }
 
 void iFFT(complex *X, int n, double *stbl) {
-  long size;
-  register long length, step, stepsize, end;
+  int size;
+  register int length, step, stepsize, end;
   double scale;
   register complex *top, *bottom; /* top & bottom of FFT butterfly */
   complex temp;
 
   size = 1L << (n - 2);
-  end = (long)X + 4 * sizeof(temp) * size;
+  end = (int)X + 4 * sizeof(temp) * size;
 
   scale = 0.25 / size;
   top = X;
   bottom = X + 1;
-  while ((long)top < end) {
+  while ((int)top < end) {
     Re(temp) = (Re(*top) - Re(*bottom)) * scale; /* butterfly: twiddle = 1/N */
     Im(temp) = (Im(*top) - Im(*bottom)) * scale;
     Re(*top) = (Re(*top) + Re(*bottom)) * scale;
@@ -141,7 +141,7 @@ void iFFT(complex *X, int n, double *stbl) {
   stepsize = size;
   while (stepsize >= 1) {
     top = X;
-    while ((long)top < end) {
+    while ((int)top < end) {
       bottom = top + 2 * length;
 
       temp = *bottom; /* butterfly: twiddle = 1 */
@@ -192,7 +192,7 @@ void iFFT(complex *X, int n, double *stbl) {
 }
 
 void sin_table(double *stbl, int n) {
-  register long size, i;
+  register int size, i;
   double theta;
 
   size = 1L << (n - 2);

@@ -43,6 +43,14 @@ typedef struct {
   float *wave110;
   float *wave111;
 } wavetable_oscillator_data;
+static wavetable_oscillator_data oscillator[NUM_OSCILLATORS];
+static float sinewave[WAVETABLE_SIZE];
+static float squarewave[WAVETABLE_SIZE];
+static float output_samples[NUM_OSCILLATORS][SAMPLE_BLOCKSIZE];
+static float silence[WAVETABLE_SIZE];
+static float sample_tables[WAVETABLE_SIZE * 100];
+
+float *sampleRef = &sample_tables[0];
 
 wavetable_oscillator_data *init_oscillators();
 void wavetable_0dimensional_oscillator(
