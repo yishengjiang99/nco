@@ -7,7 +7,8 @@ import {
   midiBtn,
   controlPanel,
   presetBtns,
-  canvas1
+  canvas1,
+  canvas2,
 } from "./main.js";
 import { bindMidiAccess } from "./midi-connect.js";
 import {  mkdiv } from "./mkdiv.js";
@@ -40,14 +41,17 @@ async function init_audio_ctx() {
     awn.port.onmessage = (e) => {
       if (e.data.osc_table) {
         statediv.innerHTML = Object.keys(e.data.osc_table)
-          .map((k) => `${k}:${e.data.osc_table[k]}`)
+          .map((k) => `${k}:${e.data.osc_table[k].toFixed(4)}`)
           .join("\n");
       }
       if (e.data.setMidi) {
         stdout(JSON.stringify(e.data.setMidi));
       }
-      if(e.data.tableGot){
-        chart(new Float32Array( e.data.tableGot),canvas1);
+      if (e.data.tableGot) {
+        const tbidx = document.querySelector("#tbIdx0").checked ? 0 : 2;
+
+        const canvas = tbidx == 0 ? canvas1 : canvas2;
+        chart(new Float32Array(e.data.tableGot), canvas);
       }
     };
     if (!envelope) {
@@ -67,8 +71,11 @@ async function noteOn(midi, channel, velocity) {
     noteOn: { channel, note: midi, velocity: fadeVelocity },
   });
 
-  envelope.gain.linearRampToValueAtTime(1, ctx.currentTime + attack);
-  envelope.gain.exponentialRampToValueAtTime(sustain, ctx.currentTime + decay);
+    envelope.gain.linearRampToValueAtTime(1, ctx.currentTime + attack);
+    envelope.gain.exponentialRampToValueAtTime(
+      sustain,
+      ctx.currentTime + decay
+    );
 }
 function noteOff(midi, channel = 0) {
   awn.port.postMessage({
@@ -79,7 +86,7 @@ function noteOff(midi, channel = 0) {
 }
 async function gotCtx() {
   analy = new AnalyserNode(ctx, { fftSize: 256 });
-  awn.connect(envelope).connect(analy).connect(ctx.destination);
+  awn.connect(ctx.destination);
   stdout("loading engine ready");
   const keys = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"];
   stdout(`use keys ${keys.join(",")} to request midi tones 48 + index of key `);
@@ -106,11 +113,33 @@ async function gotCtx() {
       );
     }
   }
+  presetBtns.appendChild(
+    mkdiv("div", {}, [
+      "tb00",
+      mkdiv("input", {
+        id: "tbIdx0",
+        type: "radio",
+        name: "tableIdx",
+        value: "0",
+        checked: "1",
+      }),
+      "tb010",
+      mkdiv("input", {
+        type: "radio",
+        name: "tableIdx",
+        value: "2",
+      }),
+    ])
+  );
   for(const t of tbs){
       const btn=mkdiv("button",  {
         onclick:  async ()  =>{
+            const tbidx = document.querySelector("#tbIdx0").checked ? 0 : 2;
             const fltbl=await loadPeriodicForms(t)
-            awn.port.postMessage({table:fltbl.buffer,channel:0,tableIdx:2},[fltbl.buffer]);
+                awn.port.postMessage(
+                  { table: fltbl.buffer, channel: 0, tableIdx: tbidx },
+                  [fltbl.buffer]
+                );
             },
         },t);
      presetBtns.appendChild(btn);

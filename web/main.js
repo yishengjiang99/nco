@@ -38,20 +38,21 @@ const sliders = Object.keys(state).map((attr) => {
     mkdiv("label", { id: `${attr}val` }, "" + state[attr][0]),
   ]);
 });
-export const [controlPanel, startBtn, piano,canvas1, presetBtns] = [
+export const [controlPanel, startBtn, piano,canvas1, canvas2,presetBtns] = [
   mkdiv("div", { id: "panel" }, sliders),
   mkdiv("button", { class: "btn btn-primary" }, "start"),
   mkdiv("piano-keyboard"),  mkdiv("canvas",{width:320,height:280}),
-
+  mkdiv("canvas",{width:320,height:280}),
   mkdiv("div",    { id: "presets" }    ),
 ];
 main.appendChild(canvas1);
+main.appendChild(canvas2);
 main.appendChild(statediv);
-main.appendChild(controlPanel);
 main.appendChild(presetBtns);
 
 main.appendChild(piano);
 main.appendChild(infoPanel);
+main.appendChild(controlPanel);
 
 /* startBtn,
  */

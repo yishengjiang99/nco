@@ -351,24 +351,26 @@ void spin() {
   for (int i = 0; i < NUM_OSCILLATORS; i++) {
     if (oscillator[i].fadeDim1 >= 0.0f) {
       wavetable_2dimensional_oscillator(&(oscillator[i]));
+    } else {
+      oscillator[i].fadeDim1 = 0.0f;
+      oscillator[i].fadeDim1Increment = 0;
     }
-    if (oscillator[i].fadeDim1 >= 1.1f) {
-      oscillator[i].fadeDim1Increment = -1.0 / SAMPLE_RATE;
+    if (oscillator[i].fadeDim1 >= 1.1f &&
+        oscillator[i].fadeDim1Increment > 0.0f) {
+      oscillator[i].fadeDim1Increment = -1.0 / SAMPLE_RATE * .001;
     }
   }
 }
 void noteOn(wavetable_oscillator_data *osc, int phaseInc, int vel) {
-  osc->fadeDim1Increment = 1.0 / SAMPLE_RATE * vel;
+  osc->fadeDim1Increment = 1.0 / SAMPLE_RATE * vel * .4;
   osc->phaseIncrement = phaseInc;
   osc->fadeDim1 = 0.0;
 }
 void noteOff(wavetable_oscillator_data *osc, int vel) {
-  osc->fadeDim1Increment = -1.0 / SAMPLE_RATE * vel;
+  osc->fadeDim1Increment = -1.0 / SAMPLE_RATE * vel * .7;
 }
 void loadBins(int sampleTableIndex){
-  float* samples = sampleRef + sampleTableIndex * WAVETABLE_SIZE;
-  
-  
+  float *samples = sampleRef + sampleTableIndex * WAVETABLE_SIZE;
 }
 
 int wavetable_struct_size() { return sizeof(wavetable_oscillator_data); }
