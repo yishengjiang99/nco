@@ -65,7 +65,7 @@ function osc_info(ref) {
     wv11,
   };
 }
-
+let tbIdx = 0;
 function onMSG(e) {
   const {data, target} = e;
   const {
@@ -74,22 +74,34 @@ function onMSG(e) {
     setFade,
     setFadeDelta,
     setPhaseIncrement,
-    keyOn,
-    keyOff,
+    noteOn,
+    noteOff,
     info,
-    setTable,
+    table,
+    setTable,channel,tableIdx
   } = e.data;
-  if (readable) {
-    const reader = readable.getReader();
-    let tbIdx = 0;
-    reader.read().then(function process({value, done}) {
-      if (done || value.length == 0) return;
-      const ref = Module.sampleTableRef(tbIdx++);
-      Module.HEAPF32.set(new Float32Array(value), ref);
+  if (noteOn) {
+    const { channel, note, velocity } = noteOn;
+    const oscRef = chref(channel);
+    const phaseInc = ~~(Math.pow(2.0, note / 12) * 8.176 * bit32Normalize);
+    Module.noteOn(oscRef, phaseInc, velocity);
+  }
+  if (noteOff) {
+    const { channel, velocity } = noteOff;
+    const oscRef = chref(channel);
+    Module.noteOff(oscRef, velocity);
+  }
 
-      reader.read().then(process);
-    });
-    return;
+  if (table) {
+    const ref = Module.sampleTableRef(tbIdx++);
+    Module.HEAPF32.set(new Float32Array(table), ref);
+    awpport.postMessage({  tableGot:  table  },  [table]);
+    if(channel !=null && tableIdx!=null){
+      tbViews[channel].setUint32(
+        tableIdx * Uint32Array.BYTES_PER_ELEMENT,
+        Module.sampleTableRef(tbIdx++)
+        , true);
+    }
   }
 
   if (setMidiNote) {
@@ -118,17 +130,18 @@ function onMSG(e) {
       tbIndex * Uint32Array.BYTES_PER_ELEMENT,
       Module.sampleTableRef(formIndex), true);
 
-    awpport.postMessage({fl, osc_table: osc_info(chref(channel))});
+    awpport.postMessage({ osc_table: osc_info(chref(channel)) });
   }
 }
 init();
 function spinOscillators(channel) {
-  for (let i = 0;i < 1;i++) {
-    for (let f = 0;f < 128;f++) {
-      soundCards[i][f] = 0;
-    }
-    Module.wavetable_1dimensional_oscillator(osc_ref + osc_struct_size * i);
-  }
+  // for (let i = 0;i < 1;i++) {
+  //   for (let f = 0;f < 128;f++) {
+  //     soundCards[i][f] = 0;
+  //   }
+  //   Module.wavetable_1dimensional_oscillator(osc_ref + osc_struct_size * i);
+  // }
+  Module.spin();
 }
 class RendProc extends AudioWorkletProcessor {
   constructor() {

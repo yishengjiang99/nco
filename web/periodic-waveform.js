@@ -57,19 +57,23 @@ export async function loadPeriodicForms(tablename) {
         length: 4096,
         sampleRate: 4096,
     });
+    const res = await fetch("fftbins/" + tablename);
+    const ab = await res.arrayBuffer();
+
     let osc = new OscillatorNode(ctx, {
-        type: "custom",
-        periodicWave: new PeriodicWave(ctx, {
-            imag: new Float32Array(await (await fetch("wvtable_pcm/" + tablename + "_img.pcm")).arrayBuffer()),
-            real: new Float32Array(await (await fetch("wvtable_pcm/" + tablename + "_real.pcm")).arrayBuffer()),
-        }),
-        frequency: 1,
+      type: "custom",
+      periodicWave: new PeriodicWave(ctx, {
+        imag: new Float32Array(ab, 2048  *  Float32Array.BYTES_PER_ELEMENT,2048),
+        real: new Float32Array(ab, 0, 2048),
+      }),
+      frequency: 1,
     });
     osc.connect(ctx.destination);
     osc.start();
     osc.stop(1.0);
-    (await ctx.startRendering()).getChannelData(0);
-    return;
+    const audb = await ctx.startRendering();
+    return audb.getChannelData(0);
 }
+
 export async function fft(fl) {
 }

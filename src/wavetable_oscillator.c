@@ -12,6 +12,7 @@
 #define SAMPLE_RATE 48000.0f
 typedef unsigned int uint32_t;
 typedef int int32_t;
+#include "fft.c"
 //
 //  This typedef in wavetable_oscillator.h
 //
@@ -292,6 +293,7 @@ static float silence[WAVETABLE_SIZE];
 static float sample_tables[WAVETABLE_SIZE * 100];
 float *sampleRef = &sample_tables[0];
 
+
 void *sampleTableRef(int tableNumber) {
   return sample_tables + WAVETABLE_SIZE * tableNumber;
 }
@@ -327,15 +329,15 @@ wavetable_oscillator_data *init_oscillators() {
     oscillator[i].scaler_fractionalBits =
         ((float)WAVETABLE_SIZE) / BIT32_NORMALIZATION;
 
-    oscillator[i].fadeDim1 = 1.0f;
+    oscillator[i].fadeDim1 = 0.0f;
     oscillator[i].fadeDim1Increment = 0.0f;
-    oscillator[i].fadeDim2 = .0f;
-    oscillator[i].fadeDim2 = 0.0f;
+    oscillator[i].fadeDim2 = .5f;
 
-    oscillator[i].wave000 = sinewave;
-    oscillator[i].wave001 = squarewave;
+
+    oscillator[i].wave000 = silence;
+    oscillator[i].wave001 = sinewave;
     oscillator[i].wave010 = silence;
-    oscillator[i].wave011 = silence;
+    oscillator[i].wave011 = squarewave;
     oscillator[i].wave100 = sinewave;
     oscillator[i].wave101 = squarewave;
     oscillator[i].wave110 = sinewave;
@@ -345,5 +347,28 @@ wavetable_oscillator_data *init_oscillators() {
   return oscillator;
 }
 
+void spin() {
+  for (int i = 0; i < NUM_OSCILLATORS; i++) {
+    if (oscillator[i].fadeDim1 >= 0.0f) {
+      wavetable_2dimensional_oscillator(&(oscillator[i]));
+    }
+    if (oscillator[i].fadeDim1 >= 1.1f) {
+      oscillator[i].fadeDim1Increment = -1.0 / SAMPLE_RATE;
+    }
+  }
+}
+void noteOn(wavetable_oscillator_data *osc, int phaseInc, int vel) {
+  osc->fadeDim1Increment = 1.0 / SAMPLE_RATE * vel;
+  osc->phaseIncrement = phaseInc;
+  osc->fadeDim1 = 0.0;
+}
+void noteOff(wavetable_oscillator_data *osc, int vel) {
+  osc->fadeDim1Increment = -1.0 / SAMPLE_RATE * vel;
+}
+void loadBins(int sampleTableIndex){
+  float* samples = sampleRef + sampleTableIndex * WAVETABLE_SIZE;
+  
+  
+}
 
 int wavetable_struct_size() { return sizeof(wavetable_oscillator_data); }
