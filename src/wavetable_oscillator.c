@@ -372,5 +372,7 @@ void noteOff(wavetable_oscillator_data *osc, int vel) {
 void loadBins(int sampleTableIndex){
   float *samples = sampleRef + sampleTableIndex * WAVETABLE_SIZE;
 }
-
+void onMidiMsg(char* msg){
+  
+}
 int wavetable_struct_size() { return sizeof(wavetable_oscillator_data); }

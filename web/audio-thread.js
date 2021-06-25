@@ -70,7 +70,7 @@ function onMSG(e) {
   const {data, target} = e;
   const {
     readable,
-    setMidiNote,
+    midiMsg,
     setFade,
     setFadeDelta,
     setPhaseIncrement,
@@ -78,7 +78,9 @@ function onMSG(e) {
     noteOff,
     info,
     table,
-    setTable,channel,tableIdx
+    setTable,
+    channel,
+    tableIdx,
   } = e.data;
   if (noteOn) {
     const { channel, note, velocity } = noteOn;
@@ -104,10 +106,6 @@ function onMSG(e) {
     }
   }
 
-  if (setMidiNote) {
-    const {channel, value} = setMidiNote;
-    phaseViews[channel].setInt32(4, ~~(Math.pow(2.0, value / 12) * 8.176 * bit32Normalize), true);
-  }
   if (setPhaseIncrement) {
     const {channel, value} = setPhaseIncrement;
     phaseViews[channel].setFloat32(2, value, true);
@@ -161,8 +159,8 @@ class RendProc extends AudioWorkletProcessor {
       outputs[i][1].set(soundCards[i]);
     }
     spinOscillators();
-    if (currentFrame - this.lastUpdate > 12000) {
-      this.port.postMessage({osc_table: osc_info(osc_ref)});
+    if (currentFrame - this.lastUpdate > 4800) {
+      this.port.postMessage({ osc_table: osc_info(osc_ref) });
       this.lastUpdate = currentFrame;
     }
     return true;

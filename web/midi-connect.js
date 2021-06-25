@@ -28,5 +28,6 @@ export async function bindMidiAccess(procPort, noteOn, noteOff, stdout, stderr) 
             }
         };
     }
+    return midiInputs;
 }
 ;
