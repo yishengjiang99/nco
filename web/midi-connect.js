@@ -7,7 +7,7 @@ export async function bindMidiAccess(procPort, noteOn, noteOff, stdout, stderr) 
         // @ts-ignore
         input.onmidimessage = ({ data, timestamp }) => {
             //procPort.postMessage({ midi: data, timestamp });
-            const channel = data[0] & 0x7f;
+            const channel = data[0] & 0x0f;
             const cmd = data[0] & 0x80;
             const note = data[1];
             const velocity = data.length > 2 ? data[2] : 0;

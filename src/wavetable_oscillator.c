@@ -1,4 +1,4 @@
-
+#include <stdint.h>
 #define NUM_OSCILLATORS 16
 #define SAMPLE_BLOCKSIZE 128
 
@@ -10,9 +10,7 @@
 #define PIF 3.1415926539f
 #define BIT32_NORMALIZATION 4294967296.0f
 #define SAMPLE_RATE 48000.0f
-typedef unsigned int uint32_t;
-typedef int int32_t;
-#include "fft.c"
+
 //
 //  This typedef in wavetable_oscillator.h
 //

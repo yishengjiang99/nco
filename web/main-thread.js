@@ -71,18 +71,15 @@ async function noteOn(midi, channel, velocity) {
     noteOn: { channel, note: midi, velocity: fadeVelocity },
   });
 
-  // envelope.gain.linearRampToValueAtTime(1, ctx.currentTime + attack);
-  // envelope.gain.exponentialRampToValueAtTime(
-  //   sustain,
-  //   ctx.currentTime + decay
-  // );
+  envelope.gain.linearRampToValueAtTime(1, ctx.currentTime + attack);
+  envelope.gain.exponentialRampToValueAtTime(sustain, ctx.currentTime + decay);
 }
 function noteOff(midi, channel = 0) {
   awn.port.postMessage({
     noteOff: { channel, velocity: 55 },
   });
-  //   envelope.gain.cancelAndHoldAtTime(ctx.currentTime);
-  //   envelope.gain.exponentialRampToValueAtTime(0.00001, state.release[0]);
+  envelope.gain.cancelAndHoldAtTime(ctx.currentTime);
+  envelope.gain.exponentialRampToValueAtTime(0.00001, state.release[0]);
 }
 async function gotCtx() {
   analy = new AnalyserNode(ctx, { fftSize: 256 });

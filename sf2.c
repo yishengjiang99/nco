@@ -1,7 +1,7 @@
 #ifndef SF2_C
 #define SF2_C
 
-#include "../includes/sf2.h"
+#include "sf2.h"
 
 #include <stdio.h>
 #include <stdlib.h>

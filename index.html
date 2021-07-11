@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html class="ficon-events-icons-ready ficon-events-typefaces-proxima-nova-ready ficon-events-typefaces-proxima-nova-normal-normal-ready ficon-events-typefaces-proxima-nova-normal-italic-ready ficon-events-typefaces-proxima-nova-bold-normal-ready ficon-events-typefaces-proxima-nova-200-normal-ready ficon-events-typefaces-proxima-nova-600-normal-ready ficon-events-typefaces-museo-slab-ready ficon-events-typefaces-museo-slab-700-normal-ready ficon-events-typefaces-museo-slab-500-normal-ready ficon-events-typefaces-museo-slab-100-normal-ready ficon-events-typefaces-museo-slab-300-normal-ready">
   <head>
-    <title>Wavetable Oscillators</title>
+    <title>Wavetable Oscillators</title><!-- Start of StatCounter Code -->
     <style>
       body {
         display: grid;
         place-items: center;
       }
-    </style>
+    </style><link rel="stylesheet" href="https://fonticons-free-fonticons.netdna-ssl.com/kits/a97ca672/publications/100038/woff2.css" media="all">
   </head>
   <body>
-    <nav><code id="rx1">trap</code> music</nav>
+    <nav>
+      <code id="rx1">trap</code> music</nav>
 
     <div
       style="
@@ -38,6 +39,26 @@
     ></main>
   </body>
   <template></template>
+  <script type='module'>
+    debugger;
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "sf2.xml",true);
+
+// If specified, responseType must be empty string or "document"
+xhr.responseType = 'document';
+
+// Force the response to be parsed as XML
+xhr.overrideMimeType('text/xml');
+
+xhr.onload = function () {
+
+  if (xhr.readyState === xhr.DONE && xhr.status === 200) {
+    console.log(xhr.response, xhr.responseXML);
+  }
+};
+
+xhr.send();
+    </script>
   <script type="module" src="./web/main-thread.js"></script>
-  <script></script>
+
 </html>
