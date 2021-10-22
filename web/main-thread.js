@@ -1,9 +1,7 @@
-import { logdiv, mkdiv } from "../node_modules/mkdiv/rollup.js";
+import { logdiv, mkdiv } from "./mkdiv-lib.js";
 const BIT32_NORMALIZATION = 4294967296.0;
 const main = document.querySelector("main");
-const { stderr, stdout } = logdiv({ container: main });
-const statediv = mkdiv("pre", {}, "statediv");
-main.append(statediv);
+const { stderr, stdout } = logdiv({ containerID: "statedivs" });
 stdout("page load");
 
 let ctx, awn, envelope;
@@ -45,9 +43,11 @@ init_audio_ctx(stdout, stderr).then(async ([_ctx, awn]) => {
   stdout("press anykey to resume audio ctx");
   awn.port.onmessage = (e) => {
     if (e.data.osc_table) {
-      statediv.innerHTML = Object.keys(e.data.osc_table)
-        .map((k) => `${k}:${e.data.osc_table[k]}`)
-        .join("\n");
+      stderr(
+        Object.keys(e.data.osc_table)
+          .map((k) => `${k}:${e.data.osc_table[k]}`)
+          .join("<br>")
+      );
     }
     if (e.data.setMidi) {
       stdout(JSON.stringify(e.data.setMidi));

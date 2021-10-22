@@ -1,40 +1,29 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Wavetable Oscillators</title>
-    <link
-      rel="stylesheet"
-      href="//cdn.rawgit.com/Chalarangelo/mini.css/v3.0.1/dist/mini-dark.min.css"
-      crossorigin="anonymous"
-    />
-    <style>
-      input[type="range"] {
-        writing-mode: bt-lr;
-        -webkit-appearance: slider-vertical;
-      }
-    </style>
-  </head>
-  <body>
-    <header></header>
-    <main class="container responsive-margin splash"></main>
-    <button class="primary splash">start</button>
-    <input
-      id="onsetFade1"
-      aria-label="fadeDim1"
-      type="range"
-      step="0.01"
-      min="0"
-      max="1"
-      value="1"
-    />
-    <input
-      id="fadeVelocity"
-      aria-label="fadeDim1"
-      type="range"
-      step="1"
-      min="0"
-      max="10"
-    />
-  </body>
-  <script type="module" src="./web/main-thread.js"></script>
+<head>
+  <title>Wavetable Oscillators</title>
+  <link rel="stylesheet" href="//cdn.rawgit.com/Chalarangelo/mini.css/v3.0.1/dist/mini-dark.min.css"
+    crossorigin="anonymous" />
+  <style>
+    input[type="range"] {
+      writing-mode: bt-lr;
+      -webkit-appearance: slider-vertical;
+    }
+
+  </style>
+</head>
+<body>
+  <header>/</header>
+  <main class="container responsive-margin">
+    <div id=statedivs style='display:grid; grid-template-columns: 1fr 1fr;'></div>
+    <div class="panel">
+      <button class="primary splash">start</button>
+      <label for='onsetFade1'>Fade1</label> <input id="onsetFade1" aria-label="fadeDim1" type="range" step="0.01"
+        min="0" max="1" value="1" />
+      <input id="fadeVelocity" aria-label="fadeVelocity" type="range" step="1" min="0" max="10" />
+    </div>
+  </main>
+
+</body>
+<script type="module" src="./web/main-thread.js"></script>
 </html>
