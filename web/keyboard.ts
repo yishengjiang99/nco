@@ -36,18 +36,6 @@ export class PianoKeyboard extends HTMLElement {
         keys.map((key) => keyLi(key))
       )
     );
-    this.shadowRoot!.addEventListener("mousedown", (e) => {
-      if (!(e.target as HTMLElement).dataset.note) return false;
-      const note = (e.target as HTMLElement).dataset.note;
-
-      this.dispatchEvent(new CustomEvent("noteOn", { detail: { note } }));
-      (e.target as HTMLElement).classList.add("pressed");
-    });
-
-    this.shadowRoot!.addEventListener("mouseup", (e) => {
-      const note = (e.target as HTMLElement).dataset.note;
-      this.dispatchEvent(new CustomEvent("noteOff", { detail: { note } }));
-    });
   }
 }
 window.customElements.define("piano-keyboard", PianoKeyboard);
