@@ -5,27 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Wavetable Oscillators</title>
     <style>
+      :root { color-scheme: light dark; }
       body {
-        display: grid;
-        place-items: center;
         font-family: sans-serif;
         margin: 0;
         padding: 12px;
-        box-sizing: border-box;
+        display: grid;
+        justify-items: center;
+        gap: 12px;
       }
-      main.container {
+      #status {
         width: min(100%, 720px);
+        min-height: 2.5em;
+        font: 13px/1.4 ui-monospace, monospace;
+        white-space: pre-wrap;
+      }
+      #panel {
+        width: min(100%, 720px);
+        display: grid;
+        gap: 6px;
+      }
+      #panel label { display: flex; justify-content: space-between; gap: 8px; }
+      #start {
+        font-size: 18px;
+        padding: 12px 20px;
       }
       #keyboard {
         width: min(100%, 999px);
         height: 150px;
-        margin-top: 1rem;
       }
     </style>
   </head>
   <body>
     <nav><code>nco</code> wavetable oscillator</nav>
-    <main class="container"></main>
+    <button id="start" type="button">Start audio</button>
+    <pre id="status">tap Start, then a piano key</pre>
+    <div id="panel"></div>
     <div id="keyboard"></div>
     <script src="./libs/qwerty-hancock.js"></script>
     <script type="module" src="./web/main-thread.js"></script>
