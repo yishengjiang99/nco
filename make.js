@@ -1,27 +1,43 @@
 "use strict";
 const fs = require("fs");
-// const ws = fs.createWriteStream("sample_tables.c");
-// const files = fs.readdirSync("./offline-periodicwaves/pcm");
-// ws.write(`
-// typedef struct
-// {
-// 	float pcm[4096];
-// 	char name[20];
-// 	short coarseTune, fineTune, originalPitch;
-// 	uint8_t lo_key, hi_key;
-// } sample_table;
-// static sample_table smpls[${files.length}];`);
-// files.forEach((file, idx) => {
-//     const pcm = new Float32Array(fs.readFileSync("./offline-periodicwaves/pcm/" + file).buffer);
-//     ws.write(`smpls[${idx}].name = "${file}";\n
-// 		smpls[${idx}].pcm = (float){
-// 			${pcm.join(", ")}
-// 		}; \n`);
-// });
-// ws.end();
-require("child_process").execSync(
-  "npx wa compile src/wavetable_oscillator.c -o build/wavetable_oscillator.wasm"
-);
+const { execSync } = require("child_process");
+
+fs.mkdirSync("build", { recursive: true });
+
+function have(cmd) {
+  try {
+    execSync(`command -v ${cmd}`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function compileWasm() {
+  const out = "build/wavetable_oscillator.wasm";
+  const src = "src/wavetable_oscillator.c";
+  if (have("clang") && (have("wasm-ld") || have("wasm-ld-18") || have("lld"))) {
+    execSync(
+      [
+        "clang",
+        "--target=wasm32",
+        "-O2",
+        "-nostdlib",
+        "-Wl,--no-entry",
+        "-Wl,--export-all",
+        "-Wl,--allow-undefined",
+        `-o ${out}`,
+        src,
+      ].join(" "),
+      { stdio: "inherit" }
+    );
+    return;
+  }
+  execSync(`npx --yes wa compile ${src} -o ${out}`, { stdio: "inherit" });
+}
+
+compileWasm();
+
 fs.writeFileSync(
   `build/wavetable_oscillator.js`,
   `// prettier-ignore
@@ -49,15 +65,15 @@ fs.writeFileSync(
   const instance = new WebAssembly.Instance(module, {
     env: {
       memory: mem,
-      sinf:(x)=>Math.sin(x),
+      sinf: (x) => Math.sin(x),
       powf: (base, exp) => Math.pow(base, exp),
       table,
-      sbrk,_abort:()=>{},
-      _grow:()=>{
+      sbrk,
+      _abort: () => {},
+      _grow: () => {
         heap = new Uint8Array(mem.buffer);
       },
-      heap
-      
+      heap,
     },
   });
 
@@ -68,21 +84,5 @@ fs.writeFileSync(
     table,
     ...instance.exports,
   };
-  
   `
 );
-const execSync = require("child_process").execSync;
-// execSync("EMCC_DEBUG=1 emcc src/test.c -o test.html");
-const fns = [
-  "wavetable_0dimensional_oscillator",
-  "wavetable_1dimensional_oscillator",
-  "wavetable_2dimensional_oscillator",
-  "wavetable_3dimensional_oscillator",
-  "init_oscillators",
-  "wavetable_struct_size",
-  "set_midi",
-  "malloc",
-  "free",
-  "handle_midi_channel_msg",
-  "audio_thread_cb",
-].map((fn) => `_${fn}`);

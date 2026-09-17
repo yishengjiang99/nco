@@ -1,6 +1,14 @@
+#if defined(__wasm__)
+typedef unsigned char uint8_t;
+typedef unsigned int uint32_t;
+typedef int int32_t;
+float sinf(float);
+float powf(float, float);
+#else
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#endif
 
 #define NUM_OSCILLATORS 16
 #define SAMPLE_BLOCKSIZE 128
