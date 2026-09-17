@@ -3,6 +3,7 @@ const BIT32_NORMALIZATION = 4294967296.0;
 const main = document.querySelector("main");
 const { stderr, stdout, infoPanel, errPanel } = logdiv({ container: main });
 const statediv = mkdiv("pre", {}, "statediv");
+void wrapDiv;
 
 stdout("page load");
 let ctx, awn, envelope;
@@ -35,7 +36,7 @@ main.append(
     "div",
     {
       style:
-        "display:grid; grid-template-columns: 1fr 1fr;grid-template-rows:1fr 1fr 1fr;",
+        "display:grid; grid-template-columns: 1fr 1fr;grid-template-rows:auto; gap:8px; width:100%;",
     },
     [
       infoPanel,
@@ -53,7 +54,7 @@ var keyboard = { keyDown: null, keyUp: null };
 if (typeof QwertyHancock === "function" && document.getElementById("keyboard")) {
   keyboard = new QwertyHancock({
     id: "keyboard",
-    width: 999,
+    width: Math.min(999, Math.max(280, window.innerWidth - 24)),
     height: 150,
     octaves: 2,
     startNote: "A3",
@@ -70,7 +71,7 @@ async function init_audio_ctx(stdout, stderr) {
       stderr("failed to init audio ctx");
     }
 
-    await ctx.audioWorklet.addModule("web/audio-thread.js");
+    await ctx.audioWorklet.addModule(new URL("audio-thread.js", import.meta.url).href);
     awn = new AudioWorkletNode(ctx, "rendproc", {
       numberOfOutputs: 1,
       outputChannelCount: [2],
@@ -128,7 +129,7 @@ init_audio_ctx(stdout, stderr).then(async ([_ctx, awn]) => {
       );
     }
   };
-});
+}).catch((e) => stderr(e && e.message ? e.message : String(e)));
 function noteOn(midi, channel, velocity) {
   const { onSetFade, fadeVelocity, attack, decay, release, sustain } = state;
   ctx.resume();
@@ -163,17 +164,15 @@ keyboard.keyDown = function (note, Hertz) {
 keyboard.keyUp = function (note, Hertz) {
   noteOff((Math.log(Hertz / 440.0) / Math.log(2)) * 12 + 69, 0, 88);
 };
-let midiListenID, midiInputs, midiInputIDs;
 function bindMidiAccess(proc) {
   navigator.requestMIDIAccess().then(
     (midiAccess) => {
       stdout("midi access grant");
-      midiInputs = Array.from(midiAccess.inputs.values());
-      midiInputIDs = midiInputs.map((ip) => ip.id);
-
+      const midiInputs = Array.from(midiAccess.inputs.values());
+      let midiListenID;
       for (const input of midiInputs) {
         midiListenID = input.id;
-        input.onmidimessage = ({ data, timestamp }) => {
+        input.onmidimessage = ({ data }) => {
           awn.port.postMessage({ midi: data });
           const channel = data[0] & 0x0f;
           const cmd = data[0] & 0xf0;
@@ -190,7 +189,6 @@ function bindMidiAccess(proc) {
             default:
               break;
           }
-          console.log(data);
         };
       }
       document.querySelector("#midiListen").innerHTML = "";
@@ -216,7 +214,7 @@ function bindMidiAccess(proc) {
         )
       );
     },
-    (err) => {
+    () => {
       stderr("access not granted");
     }
   );

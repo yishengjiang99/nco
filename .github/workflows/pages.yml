@@ -44,7 +44,7 @@ jobs:
         run: |
           mkdir -p _site
           touch _site/.nojekyll
-          cp index.html _site/
+          cp index.html mkdiv.js _site/
           cp -R web libs build _site/
           if [ -f README.md ]; then cp README.md _site/; fi
 
