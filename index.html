@@ -6,14 +6,20 @@
       body {
         display: grid;
         place-items: center;
+        font-family: sans-serif;
+      }
+      #keyboard {
+        width: 999px;
+        height: 150px;
+        margin-top: 1rem;
       }
     </style>
   </head>
   <body>
-    <nav><code>trap</code> music</nav>
+    <nav><code>nco</code> wavetable oscillator</nav>
     <main class="container"></main>
+    <div id="keyboard"></div>
+    <script src="./libs/qwerty-hancock.js"></script>
+    <script type="module" src="./web/main-thread.js"></script>
   </body>
-  <template></template>
-  <script type="module" src="./dist/web/main-thread.js"></script>
-  <script></script>
 </html>
