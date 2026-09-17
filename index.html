@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Wavetable Oscillators</title>
     <style>
       :root { color-scheme: light dark; }
@@ -27,12 +27,18 @@
       }
       #panel label { display: flex; justify-content: space-between; gap: 8px; }
       #start {
-        font-size: 18px;
-        padding: 12px 20px;
+        font-size: 20px;
+        padding: 16px 28px;
+        min-height: 48px;
+        touch-action: manipulation;
+        -webkit-user-select: none;
+        user-select: none;
+        cursor: pointer;
       }
       #keyboard {
         width: min(100%, 999px);
         height: 150px;
+        touch-action: none;
       }
     </style>
   </head>
