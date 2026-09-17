@@ -8,6 +8,10 @@ function log(msg) {
   statusEl.textContent = String(msg);
 }
 
+const isiOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
 const state = {
   onSetFade: 0.8,
   attack: 0.03,
@@ -68,22 +72,41 @@ function midiFromName(name) {
   return 12 * (Number(m[2]) + 1) + order.indexOf(m[1]);
 }
 
-function unlock(ctx) {
+function unlock(audioCtx) {
   try {
-    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
-    const src = ctx.createBufferSource();
+    const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+    const src = audioCtx.createBufferSource();
     src.buffer = buf;
-    src.connect(ctx.destination);
+    src.connect(audioCtx.destination);
     src.start(0);
   } catch (_) {}
-  const p = ctx.resume && ctx.resume();
-  return p && typeof p.then === "function" ? p.catch(() => {}) : Promise.resolve();
+  try {
+    const p = audioCtx.resume && audioCtx.resume();
+    if (p && typeof p.then === "function") return p.catch(() => {});
+  } catch (_) {}
+  return Promise.resolve();
+}
+
+function attachScriptProcessor() {
+  engine = createEngine();
+  const sp = ctx.createScriptProcessor(256, 0, 1);
+  sp.onaudioprocess = (ev) => {
+    engine.render();
+    const out = ev.outputBuffer.getChannelData(0);
+    const src = engine.block;
+    const n = Math.min(out.length, src.length);
+    for (let i = 0; i < n; i++) out[i] = src[i];
+    for (let i = n; i < out.length; i++) out[i] = 0;
+  };
+  sp.connect(envelope);
+  useWorklet = false;
 }
 
 async function startAudio() {
+  log("starting…");
   if (ready) {
     await unlock(ctx);
-    log("audio " + ctx.state + " @ " + ctx.sampleRate);
+    log("audio " + ctx.state + " @ " + Math.round(ctx.sampleRate));
     return;
   }
   if (starting) return;
@@ -92,14 +115,19 @@ async function startAudio() {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) throw new Error("no AudioContext");
     ctx = ctx || new AC();
-    await unlock(ctx);
+    unlock(ctx);
 
     envelope = envelope || new GainNode(ctx, { gain: 0 });
     analyser = analyser || new AnalyserNode(ctx, { fftSize: 2048 });
 
-    if (ctx.audioWorklet && ctx.audioWorklet.addModule) {
+    if (isiOS) {
+      attachScriptProcessor();
+    } else if (ctx.audioWorklet && ctx.audioWorklet.addModule) {
       try {
-        await ctx.audioWorklet.addModule(new URL("audio-thread.js", import.meta.url).href);
+        await Promise.race([
+          ctx.audioWorklet.addModule(new URL("audio-thread.js", import.meta.url).href),
+          new Promise((_, rej) => setTimeout(() => rej(new Error("worklet timeout")), 1200)),
+        ]);
         awn = new AudioWorkletNode(ctx, "rendproc", {
           numberOfOutputs: 1,
           outputChannelCount: [1],
@@ -107,25 +135,25 @@ async function startAudio() {
         awn.connect(envelope);
         useWorklet = true;
       } catch (e) {
-        log("worklet failed, using fallback: " + (e.message || e));
+        log("worklet failed, fallback: " + (e.message || e));
+        attachScriptProcessor();
       }
-    }
-
-    if (!useWorklet) {
-      engine = createEngine();
-      const sp = ctx.createScriptProcessor(128, 0, 1);
-      sp.onaudioprocess = (ev) => {
-        engine.render();
-        ev.outputBuffer.getChannelData(0).set(engine.block);
-      };
-      sp.connect(envelope);
+    } else {
+      attachScriptProcessor();
     }
 
     envelope.connect(analyser).connect(ctx.destination);
     await unlock(ctx);
     ready = true;
-    startBtn.textContent = useWorklet ? "Audio running" : "Audio running (iOS fallback)";
-    log("audio " + ctx.state + " @ " + Math.round(ctx.sampleRate) + " via " + (useWorklet ? "worklet" : "script"));
+    startBtn.textContent = useWorklet ? "Audio running" : "Audio running";
+    log(
+      "audio " +
+        ctx.state +
+        " @ " +
+        Math.round(ctx.sampleRate) +
+        " via " +
+        (useWorklet ? "worklet" : "script")
+    );
     window.__nco = { ctx, envelope, analyser, noteOn, noteOff, measure, useWorklet };
   } catch (e) {
     log(e && e.message ? e.message : String(e));
@@ -179,12 +207,11 @@ function noteOff() {
   envelope.gain.linearRampToValueAtTime(0.0001, now + Math.max(0.03, state.release));
 }
 
-function onStart(ev) {
-  if (ev && ev.preventDefault) ev.preventDefault();
+startBtn.addEventListener("click", () => startAudio());
+startBtn.addEventListener("touchend", (e) => {
+  e.preventDefault();
   startAudio();
-}
-startBtn.addEventListener("pointerup", onStart, { passive: false });
-startBtn.addEventListener("click", onStart);
+}, { passive: false });
 
 keyboard.keyDown = function (_note, hz) {
   noteOn(midiFromHz(hz));
@@ -194,8 +221,19 @@ keyboard.keyUp = function () {
 };
 
 document.querySelector("#keyboard").addEventListener(
+  "touchstart",
+  (e) => {
+    const li = e.target.closest("li");
+    if (!li) return;
+    e.preventDefault();
+    noteOn(midiFromName(li.title || li.id));
+  },
+  { passive: false }
+);
+document.querySelector("#keyboard").addEventListener(
   "pointerdown",
   (e) => {
+    if (e.pointerType === "touch") return;
     const li = e.target.closest("li");
     if (!li) return;
     noteOn(midiFromName(li.title || li.id));
