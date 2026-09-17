@@ -14,24 +14,19 @@ export function bindMidiAccess(
       for (const input of midiInputs) {
         // @ts-ignore
         input.onmidimessage = ({ data, timestamp }) => {
-          //procPort.postMessage({ midi: data, timestamp });
-          const channel = data[0] & 0x7f;
-          const cmd = data[0] & 0x80;
+          const channel = data[0] & 0x0f;
+          const cmd = data[0] & 0xf0;
           const note = data[1];
           const velocity = data.length > 2 ? data[2] : 0;
           switch (cmd) {
             case 0x90:
-              noteOn(note, channel, velocity);
+              if (velocity === 0) noteOff(note, channel, 0);
+              else noteOn(note, channel, velocity);
               break;
             case 0x80:
-              if (velocity == 0) {
-                noteOff(note, channel, 0);
-              } else {
-                noteOn(note, channel, velocity);
-              }
+              noteOff(note, channel, velocity);
               break;
-
-            case 0x1a:
+            default:
               break;
           }
         };
