@@ -23,7 +23,7 @@ const sliders = Object.keys(state).map((attr) => {
       value: state[attr],
       max: 2,
       oninput: (e) => {
-        state.attr = e.target.value;
+        state[attr] = Number(e.target.value);
         document.querySelector(`#${attr}val`).innerHTML = e.target.value;
       },
     }),
@@ -49,16 +49,19 @@ main.append(
     ]
   )
 );
-var keyboard = new QwertyHancock({
-  id: "keyboard",
-  width: 999,
-  height: 150,
-  octaves: 2,
-  startNote: "A3",
-  whiteNotesColour: "white",
-  blackNotesColour: "black",
-  hoverColour: "#f3e939",
-});
+var keyboard = { keyDown: null, keyUp: null };
+if (typeof QwertyHancock === "function" && document.getElementById("keyboard")) {
+  keyboard = new QwertyHancock({
+    id: "keyboard",
+    width: 999,
+    height: 150,
+    octaves: 2,
+    startNote: "A3",
+    whiteNotesColour: "white",
+    blackNotesColour: "black",
+    hoverColour: "#f3e939",
+  });
+}
 
 async function init_audio_ctx(stdout, stderr) {
   try {
@@ -69,12 +72,12 @@ async function init_audio_ctx(stdout, stderr) {
 
     await ctx.audioWorklet.addModule("web/audio-thread.js");
     awn = new AudioWorkletNode(ctx, "rendproc", {
-      numberOfInputs: 16,
+      numberOfOutputs: 1,
       outputChannelCount: [2],
     });
     awn.onprocessorerror = (e) => {
       console.trace(e);
-      stderror(e);
+      stderr(e);
     };
     awn.port.onmessageerror = (e) => stderr(e);
     if (!envelope) {
@@ -146,27 +149,18 @@ function noteOn(midi, channel, velocity) {
 }
 function noteOff(midi) {
   envelope.gain.cancelAndHoldAtTime(ctx.currentTime);
-  envelope.gain.linearRampToValueAtTime(0, state.release);
-  // awn.port.postMessage({
-  //   setFadeDelta: {
-  //     channel: 0,
-  //     value: 0,
-  //   },
-  //   setPhaseIncrement: {
-  //     channel: 0,
-  //     value: 0,
-  //   },
-  // });
+  envelope.gain.linearRampToValueAtTime(
+    0,
+    ctx.currentTime + Number(state.release || 0.3)
+  );
 }
 const keys = ["a", "w", "s", "e", "d", "f", "t", "g", "y", "h", "u", "j"];
 stdout(`use keys ${keys.join(",")} to request midi tones 48 + index of key `);
 keyboard.keyDown = function (note, Hertz) {
-  // Your code here
   noteOn((Math.log(Hertz / 440.0) / Math.log(2)) * 12 + 69, 0, 77);
 };
 
 keyboard.keyUp = function (note, Hertz) {
-  // Your code here
   noteOff((Math.log(Hertz / 440.0) / Math.log(2)) * 12 + 69, 0, 88);
 };
 let midiListenID, midiInputs, midiInputIDs;
@@ -179,26 +173,21 @@ function bindMidiAccess(proc) {
 
       for (const input of midiInputs) {
         midiListenID = input.id;
-        // @ts-ignore
         input.onmidimessage = ({ data, timestamp }) => {
           awn.port.postMessage({ midi: data });
-          const channel = data[0] & 0x7f;
-          const cmd = data[0] & 0x80;
+          const channel = data[0] & 0x0f;
+          const cmd = data[0] & 0xf0;
           const note = data[1];
           const velocity = data.length > 2 ? data[2] : 0;
           switch (cmd) {
             case 0x90:
-              noteOn(note, channel, velocity);
+              if (velocity === 0) noteOff(note, channel, 0);
+              else noteOn(note, channel, velocity);
               break;
             case 0x80:
-              if (velocity == 0) {
-                noteOff(note, channel, 0);
-              } else {
-                noteOn(note, channel, velocity);
-              }
+              noteOff(note, channel, velocity);
               break;
-
-            case 0x1a:
+            default:
               break;
           }
           console.log(data);
