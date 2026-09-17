@@ -26,6 +26,7 @@ function compileWasm() {
         "-Wl,--no-entry",
         "-Wl,--export-all",
         "-Wl,--allow-undefined",
+        "-Wl,--initial-memory=9830400",
         `-o ${out}`,
         src,
       ].join(" "),
@@ -39,50 +40,34 @@ function compileWasm() {
 compileWasm();
 
 fs.writeFileSync(
-  `build/wavetable_oscillator.js`,
-  `// prettier-ignore
-  const wasmBinary = new Uint8Array([
+  "build/wavetable_oscillator.js",
+  `const wasmBinary = new Uint8Array([
     ${fs.readFileSync("build/wavetable_oscillator.wasm").join(",")}
   ]);
-  const mem = new WebAssembly.Memory({
-    initial: 150,
-    maximum: 150,
-  });
-  let heap = new Uint8Array(mem.buffer);
-  let brk = 0;
-  const sbrk = function (size) {
-    const old = brk;
-    brk += size;
-    if (brk > heap.length) {
-      mem.grow(Math.ceil((brk - heap.length) / 65536));
-      heap = new Uint8Array(mem.buffer);
-    }
-    return old;
-  };
-  const module = new WebAssembly.Module(wasmBinary);
 
-  const table = new WebAssembly.Table({ element: "anyfunc", initial: 61 });
-  const instance = new WebAssembly.Instance(module, {
-    env: {
-      memory: mem,
-      sinf: (x) => Math.sin(x),
-      powf: (base, exp) => Math.pow(base, exp),
-      table,
-      sbrk,
-      _abort: () => {},
-      _grow: () => {
-        heap = new Uint8Array(mem.buffer);
-      },
-      heap,
-    },
-  });
+  const module = new WebAssembly.Module(wasmBinary);
+  const env = {
+    sinf: (x) => Math.sin(x),
+    cosf: (x) => Math.cos(x),
+    powf: (base, exp) => Math.pow(base, exp),
+    exp2f: (x) => Math.pow(2, x),
+    expf: (x) => Math.exp(x),
+    logf: (x) => Math.log(x),
+    log2f: (x) => Math.log2(x),
+    sqrtf: (x) => Math.sqrt(x),
+    abort: () => {},
+    _abort: () => {},
+  };
+  const instance = new WebAssembly.Instance(module, { env });
+  if (instance.exports.__wasm_call_ctors) instance.exports.__wasm_call_ctors();
+  const mem = instance.exports.memory;
+  if (!mem) throw new Error("wasm module did not export memory");
 
   export default {
     mem,
     HEAPF32: new Float32Array(mem.buffer),
     HEAPU8: new Uint8Array(mem.buffer),
-    table,
     ...instance.exports,
   };
-  `
+`
 );
