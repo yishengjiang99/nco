@@ -24,6 +24,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install wasm toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang lld
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Native oscillator smoke test
+        run: npm test
+
+      - name: Compile C to wasm and wrap JS
+        run: npm run build
+
       - name: Stage site
         run: |
           mkdir -p _site
