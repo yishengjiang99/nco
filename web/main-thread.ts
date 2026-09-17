@@ -62,7 +62,6 @@ async function noteOn(midi: number, channel: number, velocity: number) {
     Object.values(state)
   ).map((v) => v[0]);
 
-  //[]
   awn.port.postMessage({
     setMidiNote: { channel: channel, value: midi },
   });
@@ -80,7 +79,11 @@ async function noteOn(midi: number, channel: number, velocity: number) {
 }
 function noteOff(midi: number, channel: number = 0) {
   envelope.gain.cancelAndHoldAtTime(ctx.currentTime);
-  envelope.gain.exponentialRampToValueAtTime(0.00001, state.release[0]);
+  const release = Number((state.release && state.release[0]) || 0.3);
+  envelope.gain.exponentialRampToValueAtTime(
+    0.00001,
+    ctx.currentTime + Math.max(release, 0.02)
+  );
 }
 async function gotCtx() {
   const { inputAnalyzer, outputAnalyzer, run_samples, disconnect } =

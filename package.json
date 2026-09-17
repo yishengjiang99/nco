@@ -1,20 +1,20 @@
 {
   "name": "nco",
   "version": "1.0.0",
-  "description": "",
+  "description": "WebAssembly wavetable oscillator (NCO)",
   "scripts": {
     "build": "node make",
-    "test": "mocha"
+    "test": "cc -O2 -o /tmp/nco-test-render src/test_render.c -lm && /tmp/nco-test-render"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yishengjiang99/nco.git"
   },
-  "keywords": [],
-  "author": " <Your Name> (example.com)",
+  "keywords": ["wavetable", "oscillator", "webaudio", "wasm"],
+  "author": "Yisheng Jiang",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/yishengjiang99/nco/issues"
   },
-  "homepage": "https://github.com/yishengjiang99/nco#readme"
+  "homepage": "https://yishengjiang99.github.io/nco/"
 }

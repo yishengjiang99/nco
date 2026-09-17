@@ -9,7 +9,7 @@ int main()
 	void *ref = init_oscillators();
 	fread(saw, 4, 4096, fopen("./pcm/06_Warm_Saw_4096.pcm", "rb"));
 
-	for (int i = 0; i < 17; i++)
+	for (int i = 0; i < NUM_OSCILLATORS; i++)
 	{
 		oscillator[i].wave000 = sinewave;
 		oscillator[i].wave001 = silence2;

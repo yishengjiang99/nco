@@ -1,14 +1,28 @@
-# nco (numerically controlled oscillator(s))
+# nco (numerically controlled oscillator)
 
-WebAssembly porting of wavetable_oscillator.c from (the) Robert Bristow-Johnson.
+WebAssembly port of Robert Bristow-Johnson's wavetable oscillator.
 
-# files
-- src/wavetable_oscillator.c: audio engine.
+## Files
 
-- index.html: the webpage
+- `src/wavetable_oscillator.c` — audio engine (phase accumulator + 0/1/2/3-D table morph)
+- `index.html` — demo page
+- `web/main-thread.js` — UI, keyboard, MIDI; sends note params to the audio thread
+- `web/audio-thread.js` — AudioWorklet processor that fills PCM from the wasm engine
+- `make.js` — compiles the C source to wasm and emits `build/wavetable_oscillator.js`
 
-- web/main-thread.js: javascript for usr input and sending input to audio thread
+## Build / test the engine
 
-- web/audio-thread.js: invoked from audio thread to provide pcm and talks to the audio engine 
+```sh
+# native smoke test (no wasm toolchain required)
+cc -O2 -o src/test_render src/test_render.c -lm && ./src/test_render
 
-- make.js: compiles the c code, prints bytrcode out in an Uint8Array, and instantiates the WebAssembly Memory, Table, Module and Instance. Provides synchornous loading (off the main thread) of the wasm module. It's like Emscripten, but actually fast, and less judgemental, 
+# wasm module used by the worklet
+npm run build
+```
+
+Open `index.html` from a local static server (AudioWorklet and ES modules need http(s)).
+
+## MIDI status bytes
+
+Channel voice messages use the high nibble for command and the low nibble for
+channel (`status & 0xF0`, `status & 0x0F`). Note-on with velocity 0 is note-off.

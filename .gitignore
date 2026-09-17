@@ -1,4 +1,13 @@
-
 node_modules
 wvtable_pcm
 .vscode
+.DS_Store
+**/.DS_Store
+*.o
+src/test
+src/test_render
+cache.dat
+a.out.js
+a.out.wasm
+*.sf2
+dist/
