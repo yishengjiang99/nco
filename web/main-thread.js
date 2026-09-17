@@ -1,3 +1,5 @@
+import { createEngine } from "./engine.js";
+
 const statusEl = document.querySelector("#status");
 const panel = document.querySelector("#panel");
 const startBtn = document.querySelector("#start");
@@ -32,10 +34,13 @@ for (const attr of Object.keys(state)) {
 }
 
 let ctx;
-let awn;
 let envelope;
 let analyser;
 let ready = false;
+let starting = false;
+let engine;
+let useWorklet = false;
+let awn;
 
 const keyboardWidth = Math.min(999, Math.max(280, window.innerWidth - 24));
 const keyboard =
@@ -56,26 +61,77 @@ function midiFromHz(hz) {
   return Math.round(69 + 12 * Math.log2(hz / 440));
 }
 
+function midiFromName(name) {
+  const m = /^([A-G]#?)(-?\d+)$/.exec(name || "");
+  if (!m) return 69;
+  const order = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  return 12 * (Number(m[2]) + 1) + order.indexOf(m[1]);
+}
+
+function unlock(ctx) {
+  try {
+    const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch (_) {}
+  const p = ctx.resume && ctx.resume();
+  return p && typeof p.then === "function" ? p.catch(() => {}) : Promise.resolve();
+}
+
 async function startAudio() {
-  if (!ctx) {
-    ctx = new AudioContext({ sampleRate: 48000 });
-    await ctx.audioWorklet.addModule(
-      new URL("audio-thread.js", import.meta.url).href
-    );
-    awn = new AudioWorkletNode(ctx, "rendproc", {
-      numberOfOutputs: 1,
-      outputChannelCount: [2],
-    });
-    awn.onprocessorerror = (e) => log("worklet error: " + e);
-    envelope = new GainNode(ctx, { gain: 0 });
-    analyser = new AnalyserNode(ctx, { fftSize: 2048 });
-    awn.connect(envelope).connect(analyser).connect(ctx.destination);
+  if (ready) {
+    await unlock(ctx);
+    log("audio " + ctx.state + " @ " + ctx.sampleRate);
+    return;
   }
-  if (ctx.state !== "running") await ctx.resume();
-  ready = true;
-  startBtn.textContent = "Audio running";
-  log("audio " + ctx.state + " — tap a piano key");
-  window.__nco = { ctx, awn, envelope, analyser, noteOn, noteOff, measure };
+  if (starting) return;
+  starting = true;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) throw new Error("no AudioContext");
+    ctx = ctx || new AC();
+    await unlock(ctx);
+
+    envelope = envelope || new GainNode(ctx, { gain: 0 });
+    analyser = analyser || new AnalyserNode(ctx, { fftSize: 2048 });
+
+    if (ctx.audioWorklet && ctx.audioWorklet.addModule) {
+      try {
+        await ctx.audioWorklet.addModule(new URL("audio-thread.js", import.meta.url).href);
+        awn = new AudioWorkletNode(ctx, "rendproc", {
+          numberOfOutputs: 1,
+          outputChannelCount: [1],
+        });
+        awn.connect(envelope);
+        useWorklet = true;
+      } catch (e) {
+        log("worklet failed, using fallback: " + (e.message || e));
+      }
+    }
+
+    if (!useWorklet) {
+      engine = createEngine();
+      const sp = ctx.createScriptProcessor(128, 0, 1);
+      sp.onaudioprocess = (ev) => {
+        engine.render();
+        ev.outputBuffer.getChannelData(0).set(engine.block);
+      };
+      sp.connect(envelope);
+    }
+
+    envelope.connect(analyser).connect(ctx.destination);
+    await unlock(ctx);
+    ready = true;
+    startBtn.textContent = useWorklet ? "Audio running" : "Audio running (iOS fallback)";
+    log("audio " + ctx.state + " @ " + Math.round(ctx.sampleRate) + " via " + (useWorklet ? "worklet" : "script"));
+    window.__nco = { ctx, envelope, analyser, noteOn, noteOff, measure, useWorklet };
+  } catch (e) {
+    log(e && e.message ? e.message : String(e));
+  } finally {
+    starting = false;
+  }
 }
 
 function measure() {
@@ -94,14 +150,22 @@ function measure() {
 async function noteOn(midi) {
   try {
     if (!ready) await startAudio();
-    if (ctx.state !== "running") await ctx.resume();
+    if (!ready) return;
+    await unlock(ctx);
+    if (useWorklet && awn) {
+      const freq = 440 * Math.pow(2, ((midi & 127) - 69) / 12);
+      const inc = Math.round((4294967296 * freq) / ctx.sampleRate);
+      awn.port.postMessage({ setPhaseIncrement: { channel: 0, value: inc } });
+      awn.port.postMessage({ setFade: { channel: 0, value: state.onSetFade } });
+    } else if (engine) {
+      engine.setNote(0, midi, ctx.sampleRate);
+      engine.setFade(0, state.onSetFade);
+    }
     const now = ctx.currentTime;
-    awn.port.postMessage({ setMidiNote: { channel: 0, value: midi } });
-    awn.port.postMessage({ setFade: { channel: 0, value: state.onSetFade } });
     envelope.gain.cancelScheduledValues(now);
-    envelope.gain.setValueAtTime(Math.max(envelope.gain.value, 0.0001), now);
+    envelope.gain.setValueAtTime(Math.max(envelope.gain.value, 0.001), now);
     envelope.gain.linearRampToValueAtTime(1, now + Math.max(0.01, state.attack));
-    log("note on midi " + midi);
+    log("note " + midi + " " + ctx.state);
   } catch (e) {
     log(e && e.message ? e.message : String(e));
   }
@@ -111,11 +175,16 @@ function noteOff() {
   if (!ctx || !envelope) return;
   const now = ctx.currentTime;
   envelope.gain.cancelScheduledValues(now);
-  envelope.gain.setValueAtTime(envelope.gain.value, now);
-  envelope.gain.linearRampToValueAtTime(0, now + Math.max(0.02, state.release));
+  envelope.gain.setValueAtTime(Math.max(envelope.gain.value, 0), now);
+  envelope.gain.linearRampToValueAtTime(0.0001, now + Math.max(0.03, state.release));
 }
 
-startBtn.onclick = () => startAudio().catch((e) => log(e.message || String(e)));
+function onStart(ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+  startAudio();
+}
+startBtn.addEventListener("pointerup", onStart, { passive: false });
+startBtn.addEventListener("click", onStart);
 
 keyboard.keyDown = function (_note, hz) {
   noteOn(midiFromHz(hz));
@@ -128,18 +197,8 @@ document.querySelector("#keyboard").addEventListener(
   "pointerdown",
   (e) => {
     const li = e.target.closest("li");
-    if (!li || !li.title) return;
-    const hz = 440 * Math.pow(2, (midiFromHzName(li.title) - 69) / 12);
-    noteOn(midiFromHz(hz));
+    if (!li) return;
+    noteOn(midiFromName(li.title || li.id));
   },
   { passive: true }
 );
-
-function midiFromHzName(name) {
-  const m = /^([A-G]#?)(-?\d+)$/.exec(name);
-  if (!m) return 69;
-  const order = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const idx = order.indexOf(m[1]);
-  const oct = Number(m[2]);
-  return 12 * (oct + 1) + idx;
-}
